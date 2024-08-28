@@ -76,6 +76,8 @@
         <div
           class="flex-1 overflow-y-auto"
           :class="{ 'max-w-sm mx-auto': isMobilePreview }"
+          @dragover.prevent
+          @drop="handleDrop"
         >
           <draggable
             v-if="blocks.length > 0"
@@ -145,14 +147,17 @@
               </div>
               <div class="space-y-2">
                 <button
-                  v-for="block in filteredBlocks"
-                  :key="block.name"
-                  class="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  @click="addBlock(block)"
-                >
-                  <i :class="[block.icon, 'mr-3 text-gray-400']"></i>
-                  {{ block.name }}
-                </button>
+  v-for="block in filteredBlocks"
+  :key="block.name"
+  class="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+  @click="addBlock(block)"
+  @dragstart="startDrag(block)"
+  draggable="true"
+>
+  <i :class="[block.icon, 'mr-3 text-gray-400']"></i>
+  {{ block.name }}
+</button>
+
               </div>
             </div>
           </div>
@@ -180,6 +185,21 @@ const isEditing = ref(false);
 const searchQuery = ref("");
 const drag = ref(false);
 const isDragging = ref(false);
+
+const draggedBlock = ref(null);
+
+const startDrag = (block) => {
+  draggedBlock.value = block;
+};
+
+const handleDrop = (event) => {
+  if (draggedBlock.value) {
+    addBlock(draggedBlock.value);
+    draggedBlock.value = null;
+  }
+};
+
+
 
 const availableBlocks = computed(() => {
   if (!Array.isArray(props.registeredBlocks)) {
