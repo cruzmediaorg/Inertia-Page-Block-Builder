@@ -8,7 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 
 class MakeBlockOptionCommand extends Command
 {
-    protected $signature = 'make:block-option {name : The name of the block option}';
+    protected $signature = 'make:option {name : The name of the block option}';
     protected $description = 'Create a new IPBB block option';
 
     protected $files;
