@@ -22,7 +22,6 @@ class {{name}}Block extends Block
         return [
             Input::make('Title', 'title'),
             Textarea::make('Content', 'content'),
-            // Add more options as needed
         ];
     }
 

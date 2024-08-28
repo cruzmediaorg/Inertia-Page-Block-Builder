@@ -4,8 +4,8 @@
             <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
                 {{ title }}
             </h1>
-            <h2 v-if="content" class="mt-3 text-xl text-gray-300 sm:text-2xl md:text-3xl">
-                {{ content }}
+            <h2 v-if="subtitle" class="mt-3 text-xl text-gray-300 sm:text-2xl md:text-3xl">
+                {{ subtitle }}
             </h2>
         </div>
     </header>
@@ -19,7 +19,7 @@ const props = defineProps({
         type: String,
         required: true,
     },
-    content: {
+    subtitle: {
         type: String,
         default: '',
     },
