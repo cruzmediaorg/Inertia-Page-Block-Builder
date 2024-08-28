@@ -11,7 +11,7 @@ class IPBBServiceProvider extends ServiceProvider
     {
         $this->app->afterResolving(BlockManager::class, function (BlockManager $blockManager) {
             // Register your blocks here
-            // $blockManager->registerBlock(\App\IPBB\Blocks\YourBlock::class);
+            // $blockManager->registerBlock(\App\IPBB\Blocks\Example::class);
         });
     }
 }

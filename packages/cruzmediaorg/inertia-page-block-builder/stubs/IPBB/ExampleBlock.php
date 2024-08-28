@@ -13,6 +13,7 @@ class ExampleBlock extends Block
     public array $data = [
         'title' => 'A default title',
         'subtitle' => 'A default subtitle',
+        'backgroundColor' => '#000000',
     ];
 
     public function options(): string
