@@ -315,9 +315,7 @@ const containerClass = computed(() => ({
   "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
 
-watch(blocks, (newBlocks) => {
-  console.log('Blocks updated:', newBlocks);
-}, { deep: true });
+
 </script>
 
 <style scoped>
