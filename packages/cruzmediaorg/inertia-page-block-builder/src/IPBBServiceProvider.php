@@ -26,9 +26,19 @@ class IPBBServiceProvider extends ServiceProvider
 
         // Publish directories
         $this->publishes([
-            __DIR__.'/../stubs/IPBB' => app_path('IPBB'),
+            __DIR__.'/../stubs/IPBB' => base_path('app/IPBB'),
             __DIR__.'/../stubs/js/IPBB' => resource_path('js/IPBB'),
         ], 'ipbb-stubs');
+
+        // Publish stubs
+        $this->publishes([
+            __DIR__.'/Console/Commands/stubs' => base_path('stubs/vendor/ipbb'),
+        ], 'ipbb-stubs');
+
+        // Publish ServiceProvider
+        $this->publishes([
+            __DIR__.'/stubs/IPBBServiceProvider.stub' => app_path('Providers/IPBBServiceProvider.php'),
+        ], 'ipbb-provider');
 
         // Register routes
         $this->registerRoutes();

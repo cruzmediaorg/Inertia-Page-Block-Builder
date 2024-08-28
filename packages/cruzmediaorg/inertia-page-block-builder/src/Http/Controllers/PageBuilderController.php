@@ -18,8 +18,18 @@ class PageBuilderController extends Controller
     public function index()
     {
         $registeredBlocks = $this->blockManager->getRegisteredBlocks();
+        
+        // Transform the associative array into a numeric array
+        $transformedBlocks = array_values(array_map(function ($key, $block) {
+            return [
+                'name' => $block['name'],
+                'options' => $block['options'],
+                'render' => $block['render'],
+            ];
+        }, array_keys($registeredBlocks), $registeredBlocks));
+
         return Inertia::render('IPBB/PageBuilder', [
-            'registeredBlocks' => $registeredBlocks,
+            'registeredBlocks' => $transformedBlocks,
         ]);
     }
 }

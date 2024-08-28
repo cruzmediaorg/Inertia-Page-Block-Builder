@@ -25,15 +25,15 @@ class CreateBlockCommand extends Command
         $studlyName = Str::studly($name);
 
         $this->createBlockClass($studlyName);
-        $this->createRenderComponent($studlyName);
         $this->createOptionsComponent($studlyName);
+        $this->createRenderComponent($studlyName);
 
         $this->info("Block {$studlyName} created successfully!");
     }
 
     protected function createBlockClass($name)
     {
-        $stub = $this->files->get(__DIR__.'/stubs/block.stub');
+        $stub = $this->files->get(__DIR__.'/stubs/Block.stub');
         $content = str_replace('{{name}}', $name, $stub);
         
         $path = app_path("IPBB/Blocks/{$name}.php");
@@ -41,22 +41,22 @@ class CreateBlockCommand extends Command
         $this->files->put($path, $content);
     }
 
-    protected function createRenderComponent($name)
+    protected function createOptionsComponent($name)
     {
-        $stub = $this->files->get(__DIR__.'/stubs/render.stub');
+        $stub = $this->files->get(__DIR__.'/stubs/Options.stub');
         $content = str_replace('{{name}}', $name, $stub);
         
-        $path = resource_path("js/IPBB/Blocks/{$name}/Render.vue");
+        $path = resource_path("js/IPBB/Blocks/{$name}/Options.vue");
         $this->makeDirectory(dirname($path));
         $this->files->put($path, $content);
     }
 
-    protected function createOptionsComponent($name)
+    protected function createRenderComponent($name)
     {
-        $stub = $this->files->get(__DIR__.'/stubs/options.stub');
+        $stub = $this->files->get(__DIR__.'/stubs/Render.stub');
         $content = str_replace('{{name}}', $name, $stub);
         
-        $path = resource_path("js/IPBB/Blocks/{$name}/Options.vue");
+        $path = resource_path("js/IPBB/Blocks/{$name}/Render.vue");
         $this->makeDirectory(dirname($path));
         $this->files->put($path, $content);
     }

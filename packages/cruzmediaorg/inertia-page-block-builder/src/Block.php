@@ -4,11 +4,10 @@ namespace Cruzmediaorg\InertiaPageBlockBuilder;
 
 abstract class Block
 {
-    abstract public function options(): array;
-    abstract public function render(): string;
+    public string $name;
+    public static string $reference;
+    public array $data;
 
-    public function name(): string
-    {
-        return class_basename($this);
-    }
+    abstract public function options(): string;
+    abstract public function render(): string;
 }

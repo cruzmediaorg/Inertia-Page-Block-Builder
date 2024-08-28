@@ -22,7 +22,7 @@
             @click="selectBlock(index)"
           >
             <component
-              :is="block.component"
+              :is="getBlockComponent(block)"
               v-bind="block.props"
             />
             <div class="ipbb-block-actions">
@@ -65,7 +65,8 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, defineAsyncComponent } from 'vue'
+import FallbackBlock from './FallbackBlock.vue'
 
 export default {
   props: {
@@ -81,16 +82,44 @@ export default {
     const searchQuery = ref('')
 
     const availableBlocks = computed(() => {
-      if (!props.registeredBlocks) return []
-      return props.registeredBlocks.map(block => ({
-        name: block.name,
-        component: resolveComponent(block.render),
-        options: resolveComponent(block.render.replace('Render', 'Options')),
-        defaultProps: Object.fromEntries(
-          Object.entries(block.options).map(([key, value]) => [key, value.default])
-        ),
-        icon: 'fas fa-cube', // You might want to add an icon property to your Block class
-      }))
+      if (!Array.isArray(props.registeredBlocks)) {
+        console.error('registeredBlocks is not an array:', props.registeredBlocks);
+        return [];
+      }
+     
+      
+      return props.registeredBlocks.map(block => {
+  return {
+    name: block.name,
+    reference: block.reference,
+    component: defineAsyncComponent({
+  loader: () => import(/* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.render}.vue`),
+  error: FallbackBlock,
+  onError: (error, retry, fail, attempts) => {
+    if (attempts <= 3) {
+      retry()
+    } else {
+      console.error(`Failed to load component: ${block.render}`, error)
+      fail()
+    }
+  }
+}),
+options: defineAsyncComponent({
+  loader: () => import(/* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.options}.vue`),
+  error: FallbackBlock,
+  onError: (error, retry, fail, attempts) => {
+    if (attempts <= 3) {
+      retry()
+    } else {
+      console.error(`Failed to load component: ${block.options}`, error)
+      fail()
+    }
+  }
+}),
+    defaultProps: block.data,
+    icon: 'fas fa-cube',
+  };
+})
     })
 
     const filteredBlocks = computed(() => {
@@ -135,6 +164,11 @@ export default {
       isEditing.value = false
     }
 
+    const getBlockComponent = (block) => {
+      const foundBlock = availableBlocks.value.find(b => b.name === block.name);
+      return foundBlock ? foundBlock.component : null;
+    }
+
     return {
       blocks,
       selectedBlock,
@@ -147,6 +181,8 @@ export default {
       deleteBlock,
       updateBlockProps,
       finishEditing,
+      availableBlocks,
+      getBlockComponent,
     }
   },
 }
