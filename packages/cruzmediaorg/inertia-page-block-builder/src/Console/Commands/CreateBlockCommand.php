@@ -34,9 +34,9 @@ class CreateBlockCommand extends Command
     protected function createBlockClass($name)
     {
         $stub = $this->files->get(__DIR__.'/stubs/Block.stub');
-        $content = str_replace('{{name}}', $name, $stub);
+        $content = str_replace(['{{name}}', '{{lowername}}'], [$name, Str::lower($name)], $stub);
         
-        $path = app_path("IPBB/Blocks/{$name}.php");
+        $path = app_path("IPBB/{$name}Block.php");
         $this->makeDirectory(dirname($path));
         $this->files->put($path, $content);
     }
@@ -46,7 +46,7 @@ class CreateBlockCommand extends Command
         $stub = $this->files->get(__DIR__.'/stubs/Options.stub');
         $content = str_replace('{{name}}', $name, $stub);
         
-        $path = resource_path("js/IPBB/Blocks/{$name}/Options.vue");
+        $path = resource_path("js/{$name}/Options.vue");
         $this->makeDirectory(dirname($path));
         $this->files->put($path, $content);
     }
@@ -56,7 +56,7 @@ class CreateBlockCommand extends Command
         $stub = $this->files->get(__DIR__.'/stubs/Render.stub');
         $content = str_replace('{{name}}', $name, $stub);
         
-        $path = resource_path("js/IPBB/Blocks/{$name}/Render.vue");
+        $path = resource_path("js/{$name}/Render.vue");
         $this->makeDirectory(dirname($path));
         $this->files->put($path, $content);
     }

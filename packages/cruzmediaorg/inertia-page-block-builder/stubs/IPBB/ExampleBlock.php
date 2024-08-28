@@ -6,18 +6,22 @@ use Cruzmediaorg\InertiaPageBlockBuilder\Block;
 
 class ExampleBlock extends Block
 {
-    public function options(): array
+    public string $name = 'Example';
+
+    public static string $reference = 'ipbb.example';
+
+    public array $data = [
+        'title' => 'A default title',
+        'subtitle' => 'A default subtitle',
+    ];
+
+    public function options(): string
     {
-        return [
-            'title' => [
-                'type' => 'string',
-                'default' => 'Example Block',
-            ],
-        ];
+        return 'Example/Options';
     }
 
     public function render(): string
     {
-        return 'IPBB/Blocks/ExampleBlock';
+        return 'Example/Render';
     }
 }

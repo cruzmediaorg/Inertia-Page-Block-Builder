@@ -1,0 +1,56 @@
+<template>
+    <div class="ipbb-{{name.toLowerCase()}}-options">
+      <div class="ipbb-option">
+        <label for="title">Title:</label>
+        <input 
+          id="title"
+          v-model="localProps.title" 
+          @input="updateProps"
+        />
+      </div>
+      <div class="ipbb-option">
+        <label for="subtitle">Subtitle:</label>
+        <input 
+          id="subtitle"
+          v-model="localProps.subtitle" 
+          @input="updateProps"
+        />
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import { ref, watch } from 'vue'
+  
+  export default {
+    props: {
+      modelValue: {
+        type: Object,
+        required: true,
+      },
+    },
+    emits: ['update:modelValue'],
+    setup(props, { emit }) {
+      const localProps = ref({ ...props.modelValue })
+  
+      watch(() => props.modelValue, (newValue) => {
+        localProps.value = { ...newValue }
+      })
+  
+      const updateProps = () => {
+        emit('update:modelValue', { ...localProps.value })
+      }
+  
+      return {
+        localProps,
+        updateProps,
+      }
+    },
+  }
+  </script>
+  
+  <style scoped>
+  .ipbb-{{name.toLowerCase()}}-options {
+    /* Add your styles here */
+  }
+  </style>
