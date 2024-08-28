@@ -1,5 +1,5 @@
 <template>
-    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out">
+    <div class="absolute top-2 right-2  opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out">
       <div class="flex bg-white rounded-md shadow-md">
         <div class="relative">
           <button class="drag-handle p-2 hover:bg-gray-100 hover:rounded-md">

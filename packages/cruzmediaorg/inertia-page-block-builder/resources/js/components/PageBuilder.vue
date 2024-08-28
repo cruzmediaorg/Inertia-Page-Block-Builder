@@ -7,7 +7,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
           <h2 class="text-2xl font-bold text-gray-900">Editor2</h2>
-          <div class="flex space-x-4">
+          <div class="hidden md:flex space-x-4">
             <button
               @click="toggleMobilePreview"
               class="bg-white p-2 border rounded-md"
@@ -72,9 +72,9 @@
       </div>
     </div>
     <div class="flex-1 overflow-hidden">
-      <div class="flex h-full">
+      <div class="flex flex-col md:flex-row h-full">
         <div
-          :class="containerClass"
+          :class="[containerClass, 'w-full md:w-[calc(100%-320px)] overflow-y-auto']"
           @dragover.prevent
           @drop="handleDrop"
         >
@@ -113,7 +113,7 @@
           </div>
         </div>
         <div
-          class="w-80 border-l border-gray-200 overflow-y-auto absolute right-0 border-t h-full"
+          class="w-full md:w-80 border-t md:border-l border-gray-200 overflow-y-auto md:absolute md:right-0 md:h-full"
         >
           <div class="p-6">
             <div v-if="selectedBlock !== null && isEditing">
@@ -167,6 +167,7 @@ import { ref, computed, defineAsyncComponent } from "vue";
 import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
+import "../../css/style.css";
 
 const props = defineProps({
   registeredBlocks: {
@@ -322,151 +323,11 @@ const toggleFullScreen = () => {
 };
 
 const containerClass = computed(() => ({
-  "max-w-sm mx-auto": isMobilePreview.value,
-  "w-[calc(100%-320px)]": !isMobilePreview.value,
+  "w-full min-w-[450px]":isMobilePreview.value,
+  "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
 </script>
 
 <style scoped>
-.ipbb-page-builder {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-}
 
-.ipbb-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
-  background-color: #f0f0f0;
-  border-bottom: 1px solid #ddd;
-}
-
-.ipbb-header h2 {
-  margin: 0;
-}
-
-.ipbb-header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.ipbb-icon-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2em;
-}
-
-.ipbb-content {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-.ipbb-editor {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.ipbb-sidebar {
-  width: 300px;
-  background-color: #f8f8f8;
-  border-left: 1px solid #ddd;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.ipbb-search {
-  margin-bottom: 20px;
-}
-
-.ipbb-search input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.ipbb-available-blocks {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.ipbb-block-button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.ipbb-block-button:hover {
-  background-color: #f0f0f0;
-}
-
-.ipbb-block-wrapper {
-  position: relative;
-  margin-bottom: 10px;
-  border: 2px solid transparent;
-}
-
-.ipbb-block-selected {
-  border-color: #007bff;
-}
-
-.ipbb-block-actions {
-  display: none;
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 4px;
-  padding: 5px;
-}
-
-.ipbb-block-wrapper:hover .ipbb-block-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.ipbb-block-actions button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 3px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.ipbb-block-actions button:hover {
-  background-color: #0056b3;
-}
-
-.mobile-preview .flex-1 {
-  max-width: 375px;
-  margin: 0 auto;
-  border-left: 1px solid #e5e7eb;
-  border-right: 1px solid #e5e7eb;
-}
-
-.group {
-  position: relative;
-}
-
-.group:hover .block-actions {
-  opacity: 1;
-}
-
-.flex-grow {
-  width: calc(100% - 320px); /* Adjust for the sidebar width */
-}
 </style>
