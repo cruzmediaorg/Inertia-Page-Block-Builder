@@ -1,6 +1,5 @@
 <template>
   <div>
-    <h1>Page Builder</h1>
     <PageBuilder :registeredBlocks="registeredBlocks" />
   </div>
 </template>

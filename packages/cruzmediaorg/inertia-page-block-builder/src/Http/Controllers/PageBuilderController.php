@@ -25,6 +25,7 @@ class PageBuilderController extends Controller
                 'name' => $block['name'],
                 'options' => $block['options'],
                 'render' => $block['render'],
+                'data' => $block['data'],
             ];
         }, array_keys($registeredBlocks), $registeredBlocks));
 
