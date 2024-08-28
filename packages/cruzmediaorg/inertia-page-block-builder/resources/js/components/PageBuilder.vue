@@ -74,8 +74,7 @@
     <div class="flex-1 overflow-hidden">
       <div class="flex h-full">
         <div
-          class="flex-1 overflow-y-auto"
-          :class="{ 'max-w-sm mx-auto': isMobilePreview }"
+          :class="containerClass"
           @dragover.prevent
           @drop="handleDrop"
         >
@@ -89,19 +88,15 @@
           >
             <template #item="{ element }">
               <div
-                class="group relative"
+                class="group"
                 :class="{
                   'ring-2 ring-blue-500': selectedBlock === blocks.indexOf(element),
                 }"
                 @click="selectBlock(blocks.indexOf(element))"
               >
-                <div
-                  class="drag-handle cursor-move absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out"
-                >
-                  <i class="fas fa-grip-vertical text-gray-400"></i>
-                </div>
                 <component :is="getBlockComponent(element)" v-bind="element.props" />
                 <BlockActions
+                  class="block-actions"
                   @edit="editBlock(blocks.indexOf(element))"
                   @delete="deleteBlock(blocks.indexOf(element))"
                   @duplicate="duplicateBlock(blocks.indexOf(element))"
@@ -109,14 +104,16 @@
               </div>
             </template>
           </draggable>
-          <div v-else class="flex justify-center items-center p-5 flex-col h-full min-w-80 bg-white">
+          <div
+            v-else
+            class="flex justify-center items-center p-5 flex-col h-full min-w-80 bg-white"
+          >
             <p class="text-gray-500 text-center font-bold">No blocks added</p>
             <p class="text-gray-500 text-center">Drag and drop a block to get started</p>
-            
           </div>
         </div>
         <div
-          class="w-80 bg-white border-l border-gray-200 overflow-y-auto absolute right-0 border-t h-full"
+          class="w-80 border-l border-gray-200 overflow-y-auto absolute right-0 border-t h-full"
         >
           <div class="p-6">
             <div v-if="selectedBlock !== null && isEditing">
@@ -147,17 +144,16 @@
               </div>
               <div class="space-y-2">
                 <button
-  v-for="block in filteredBlocks"
-  :key="block.name"
-  class="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-  @click="addBlock(block)"
-  @dragstart="startDrag(block)"
-  draggable="true"
->
-  <i :class="[block.icon, 'mr-3 text-gray-400']"></i>
-  {{ block.name }}
-</button>
-
+                  v-for="block in filteredBlocks"
+                  :key="block.name"
+                  class="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  @click="addBlock(block)"
+                  @dragstart="startDrag(block)"
+                  draggable="true"
+                >
+                  <i :class="[block.icon, 'mr-3 text-gray-400']"></i>
+                  {{ block.name }}
+                </button>
               </div>
             </div>
           </div>
@@ -198,8 +194,6 @@ const handleDrop = (event) => {
     draggedBlock.value = null;
   }
 };
-
-
 
 const availableBlocks = computed(() => {
   if (!Array.isArray(props.registeredBlocks)) {
@@ -326,6 +320,11 @@ const toggleFullScreen = () => {
     }
   }
 };
+
+const containerClass = computed(() => ({
+  "max-w-sm mx-auto": isMobilePreview.value,
+  "w-[calc(100%-320px)]": !isMobilePreview.value,
+}));
 </script>
 
 <style scoped>
@@ -457,5 +456,17 @@ const toggleFullScreen = () => {
   margin: 0 auto;
   border-left: 1px solid #e5e7eb;
   border-right: 1px solid #e5e7eb;
+}
+
+.group {
+  position: relative;
+}
+
+.group:hover .block-actions {
+  opacity: 1;
+}
+
+.flex-grow {
+  width: calc(100% - 320px); /* Adjust for the sidebar width */
 }
 </style>
