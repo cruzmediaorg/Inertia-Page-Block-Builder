@@ -1,0 +1,27 @@
+<?php
+
+namespace App\IPBB\Blocks;
+
+use Cruzmediaorg\InertiaPageBlockBuilder\Block;
+
+class {{name}} extends Block
+{
+    public function options(): array
+    {
+        return [
+            'title' => [
+                'type' => 'string',
+                'default' => 'Default Title',
+            ],
+            'subtitle' => [
+                'type' => 'string',
+                'default' => 'Default Subtitle',
+            ],
+        ];
+    }
+
+    public function render(): string
+    {
+        return 'IPBB/Blocks/{{name}}/Render';
+    }
+}

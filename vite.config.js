@@ -17,4 +17,13 @@ export default defineConfig({
             },
         }),
     ],
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+            'vendor': '/vendor',
+        },
+    },
+    optimizeDeps: {
+        include: ['vue'],
+    },
 });

@@ -10,7 +10,14 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
+    resolve: async (name) => {
+        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true })
+        const ipbbPages = import.meta.glob('../../vendor/cruzmediaorg/inertia-page-block-builder/resources/js/Pages/**/*.vue', { eager: true })
+        if (name.startsWith('IPBB/')) {
+            return ipbbPages[`../../vendor/cruzmediaorg/inertia-page-block-builder/resources/js/Pages/${name}.vue`]
+        }
+        return pages[`./Pages/${name}.vue`]
+    },
     setup({ el, App, props, plugin }) {
         return createApp({ render: () => h(App, props) })
             .use(plugin)
