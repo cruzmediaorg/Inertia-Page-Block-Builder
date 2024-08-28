@@ -6,9 +6,9 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use Illuminate\Filesystem\Filesystem;
 
-class CreateBlockCommand extends Command
+class MakeBlockCommand extends Command
 {
-    protected $signature = 'ipbb:create-block {name : The name of the block}';
+    protected $signature = 'make:block {name : The name of the block}';
     protected $description = 'Create a new IPBB block';
 
     protected $files;

@@ -4,7 +4,7 @@ namespace Cruzmediaorg\InertiaPageBlockBuilder;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
-use Cruzmediaorg\InertiaPageBlockBuilder\Console\Commands\CreateBlockCommand;
+use Cruzmediaorg\InertiaPageBlockBuilder\Console\Commands\MakeBlockCommand;
 
 class IPBBServiceProvider extends ServiceProvider
 {
@@ -48,7 +48,7 @@ class IPBBServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                CreateBlockCommand::class,
+                MakeBlockCommand::class,
             ]);
         }
     }
