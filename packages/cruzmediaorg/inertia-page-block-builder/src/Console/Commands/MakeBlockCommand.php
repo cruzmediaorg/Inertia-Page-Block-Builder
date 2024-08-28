@@ -24,11 +24,18 @@ class MakeBlockCommand extends Command
         $name = $this->argument('name');
         $studlyName = Str::studly($name);
 
+        // Check if the block already exists
+        if ($this->files->exists(app_path("IPBB/{$studlyName}Block.php"))) {
+            $this->error("The block {$studlyName} already exists!");
+            return;
+        }
+
         $this->createBlockClass($studlyName);
         $this->createOptionsComponent($studlyName);
         $this->createRenderComponent($studlyName);
 
         $this->info("Block {$studlyName} created successfully!");
+        $this->info("Don't forget to register the block in the IPBBServiceProvider class.");
     }
 
     protected function createBlockClass($name)
@@ -46,7 +53,7 @@ class MakeBlockCommand extends Command
         $stub = $this->files->get(__DIR__.'/stubs/Options.stub');
         $content = str_replace('{{name}}', $name, $stub);
         
-        $path = resource_path("js/{$name}/Options.vue");
+        $path = resource_path("js/IPBB/Blocks/{$name}/Options.vue");
         $this->makeDirectory(dirname($path));
         $this->files->put($path, $content);
     }
@@ -56,7 +63,7 @@ class MakeBlockCommand extends Command
         $stub = $this->files->get(__DIR__.'/stubs/Render.stub');
         $content = str_replace('{{name}}', $name, $stub);
         
-        $path = resource_path("js/{$name}/Render.vue");
+        $path = resource_path("js/IPBB/Blocks/{$name}/Render.vue");
         $this->makeDirectory(dirname($path));
         $this->files->put($path, $content);
     }
