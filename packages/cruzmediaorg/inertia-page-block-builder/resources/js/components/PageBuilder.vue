@@ -121,9 +121,9 @@
               <h3 class="text-lg font-medium text-gray-900 mb-4">
                 Edit {{ blocks[selectedBlock].name }}
               </h3>
-              <component
-                :is="blocks[selectedBlock].options"
+              <DynamicOptions
                 v-model="blocks[selectedBlock].props"
+                :options="blocks[selectedBlock].options"
                 @update:modelValue="updateBlockProps"
               />
               <button
@@ -164,10 +164,11 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, defineAsyncComponent } from "vue";
+import { ref, computed, defineAsyncComponent, watch } from "vue";
 import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
+import DynamicOptions from './DynamicOptions.vue';
 import "../../css/style.css";
 
 const props = defineProps({
@@ -221,21 +222,7 @@ const availableBlocks = computed(() => {
         }
       },
     }),
-    options: defineAsyncComponent({
-      loader: () =>
-        import(
-          /* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.options}.vue`
-        ),
-      error: FallbackBlock,
-      onError: (error, retry, fail, attempts) => {
-        if (attempts <= 3) {
-          retry();
-        } else {
-          console.error(`Failed to load component: ${block.options}`, error);
-          fail();
-        }
-      },
-    }),
+    options: block.options,
     defaultProps: block.data,
     icon: "fas fa-cube",
   }));
@@ -283,7 +270,7 @@ const duplicateBlock = (index) => {
 
 const updateBlockProps = (newProps) => {
   if (selectedBlock.value !== null) {
-    blocks.value[selectedBlock.value].props = newProps;
+    blocks.value[selectedBlock.value].props = { ...newProps };
   }
 };
 
@@ -327,6 +314,10 @@ const containerClass = computed(() => ({
   "w-full min-w-[450px]":isMobilePreview.value,
   "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
+
+watch(blocks, (newBlocks) => {
+  console.log('Blocks updated:', newBlocks);
+}, { deep: true });
 </script>
 
 <style scoped>

@@ -8,6 +8,6 @@ abstract class Block
     public static string $reference;
     public array $data;
 
-    abstract public function options(): string;
+    abstract public function options(): array;
     abstract public function render(): string;
 }

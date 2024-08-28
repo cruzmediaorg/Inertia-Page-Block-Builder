@@ -3,6 +3,8 @@
 namespace App\IPBB;
 
 use Cruzmediaorg\InertiaPageBlockBuilder\Block;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Input;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Textarea;
 
 class ExampleBlock extends Block
 {
@@ -12,13 +14,17 @@ class ExampleBlock extends Block
 
     public array $data = [
         'title' => 'A default title',
-        'subtitle' => 'A default subtitle',
+        'content' => 'Default content',
         'backgroundColor' => '#000000',
     ];
 
-    public function options(): string
+    public function options(): array
     {
-        return 'Example/Options';
+        return [
+            Input::make('Title', 'title'),
+            Textarea::make('Content', 'content'),
+            Input::make('Background Color', 'backgroundColor', ['type' => 'color']),
+        ];
     }
 
     public function render(): string

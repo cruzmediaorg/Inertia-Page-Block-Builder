@@ -49,6 +49,7 @@ class IPBBServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MakeBlockCommand::class,
+                // MakeBlockOptionsCommand::class,
             ]);
         }
     }

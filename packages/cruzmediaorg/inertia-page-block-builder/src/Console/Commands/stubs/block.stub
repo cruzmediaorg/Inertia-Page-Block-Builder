@@ -3,6 +3,8 @@
 namespace App\IPBB;
 
 use Cruzmediaorg\InertiaPageBlockBuilder\Block;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Input;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Textarea;
 
 class {{name}}Block extends Block
 {
@@ -15,9 +17,13 @@ class {{name}}Block extends Block
         'content' => 'Default content',
     ];
 
-    public function options(): string
+    public function options(): array
     {
-        return '{{name}}/Options';
+        return [
+            Input::make('Title', 'title'),
+            Textarea::make('Content', 'content'),
+            // Add more options as needed
+        ];
     }
 
     public function render(): string

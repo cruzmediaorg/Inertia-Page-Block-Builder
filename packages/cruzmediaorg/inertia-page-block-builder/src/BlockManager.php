@@ -23,7 +23,9 @@ class BlockManager
                 'name' => $block->name,
                 'reference' => $block::$reference,
                 'data' => $block->data,
-                'options' => $block->options(),
+                'options' => array_map(function ($option) {
+                    return $option->toArray();
+                }, $block->options()),
                 'render' => $block->render(),
             ];
         }, $this->blocks);
