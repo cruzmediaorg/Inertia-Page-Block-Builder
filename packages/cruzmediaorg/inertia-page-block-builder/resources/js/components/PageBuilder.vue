@@ -6,7 +6,7 @@
     <div class="bg-white shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
-          <h2 class="text-2xl font-bold text-gray-900">Editor2</h2>
+          <div></div>
           <div class="hidden md:flex space-x-4">
             <button
               @click="toggleMobilePreview"
@@ -63,7 +63,7 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0-4-5 5M8 20H4m0 0v-4m0 4 5-5m7 5h4m0 0v-4m0 4-5-5"
+                  d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0 4-5-5M8 20H4m0 0v-4m0 4-5-5"
                 />
               </svg>
             </button>
@@ -71,7 +71,7 @@
         </div>
       </div>
     </div>
-    <div class="flex-1 overflow-hidden">
+    <div class="flex-1 overflow-hidden border-t">
       <div class="flex flex-col md:flex-row h-full">
         <div
           :class="[containerClass, 'w-full md:w-[calc(100%-320px)] overflow-y-auto']"
@@ -161,6 +161,16 @@
         </div>
       </div>
     </div>
+    <!-- Add Save button and JSON preview -->
+    <div class="p-4">
+      <button
+        @click="saveBlocks"
+        class="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        Save Blocks
+      </button>
+      <pre v-if="jsonPreview" class="bg-gray-100 p-4 rounded overflow-auto max-h-60">{{ jsonPreview }}</pre>
+    </div>
   </div>
 </template>
 <script setup>
@@ -236,8 +246,8 @@ const filteredBlocks = computed(() => {
 
 const addBlock = (block) => {
   blocks.value.push({
-    ...block,
-    props: { ...block.defaultProps },
+    ...JSON.parse(JSON.stringify(block)), // Deep clone the entire block
+    props: JSON.parse(JSON.stringify(block.defaultProps)), // Deep clone defaultProps
     id: Date.now(), // Ensure each block has a unique id
   });
   selectedBlock.value = blocks.value.length - 1;
@@ -262,9 +272,10 @@ const deleteBlock = (index) => {
 };
 
 const duplicateBlock = (index) => {
+  const originalBlock = blocks.value[index];
   blocks.value.push({
-    ...blocks.value[index],
-    id: Date.now(),
+    ...JSON.parse(JSON.stringify(originalBlock)), // Deep clone the entire block
+    id: Date.now(), // Ensure the duplicated block has a new unique id
   });
 };
 
@@ -315,6 +326,19 @@ const containerClass = computed(() => ({
   "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
 
+const jsonPreview = ref(null);
+
+const saveBlocks = () => {
+  const blocksData = blocks.value.map(block => ({
+    name: block.name,
+    reference: block.reference,
+    props: block.props,
+    id: block.id
+  }));
+  
+  const jsonData = JSON.stringify(blocksData, null, 2);
+  jsonPreview.value = jsonData;
+};
 
 </script>
 
