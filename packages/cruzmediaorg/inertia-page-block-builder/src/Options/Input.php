@@ -4,6 +4,12 @@ namespace Cruzmediaorg\InertiaPageBlockBuilder\Options;
 
 class Input extends Option
 {
+    public function __construct(string $label, string $name, array $attributes = [])
+    {
+        parent::__construct($label, $name, $attributes);
+        $this->setComponentPath('./options/InputOption.vue');
+    }
+
     public function toArray(): array
     {
         return [
@@ -11,6 +17,7 @@ class Input extends Option
             'label' => $this->label,
             'name' => $this->name,
             'attributes' => array_merge(['type' => 'text'], $this->attributes),
+            'componentPath' => $this->getComponentPath(),
         ];
     }
 

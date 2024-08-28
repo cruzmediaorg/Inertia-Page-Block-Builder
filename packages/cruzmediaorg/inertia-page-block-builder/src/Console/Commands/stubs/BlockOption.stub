@@ -1,6 +1,8 @@
 <?php
 
-namespace Cruzmediaorg\InertiaPageBlockBuilder\Options;
+namespace App\IPBB\Options;
+
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Option;
 
 class {{name}} extends Option
 {
@@ -11,11 +13,12 @@ class {{name}} extends Option
             'label' => $this->label,
             'name' => $this->name,
             'attributes' => $this->attributes,
+            'componentPath' => $this->getComponentPath(),
         ];
     }
 
-    public static function make(string $label, string $name, array $attributes = []): self
+    public static function make(string $label, string $name, array $attributes = [], ?string $componentPath = null): self
     {
-        return new self($label, $name, $attributes);
+        return new self($label, $name, $attributes, $componentPath);
     }
 }

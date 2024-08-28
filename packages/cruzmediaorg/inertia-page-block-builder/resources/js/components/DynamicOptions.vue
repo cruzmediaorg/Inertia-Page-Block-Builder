@@ -3,7 +3,7 @@
     <component
       v-for="(option, index) in options"
       :key="index"
-      :is="getComponentType(option.type)"
+      :is="getComponentType(option)"
       v-bind="option"
       :modelValue="localProps[option.name]"
       @update:modelValue="updateLocalProp(option.name, $event)"
@@ -12,9 +12,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import InputOption from './options/InputOption.vue'
-import TextareaOption from './options/TextareaOption.vue'
+import { ref, watch, onMounted, defineAsyncComponent } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -29,26 +27,39 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const localProps = ref({ ...props.modelValue })
+const localProps = ref(props.modelValue)
 
+// Update localProps when modelValue changes, but only for changed properties
 watch(() => props.modelValue, (newValue) => {
-  localProps.value = { ...newValue }
+  Object.keys(newValue).forEach(key => {
+    if (localProps.value[key] !== newValue[key]) {
+      localProps.value[key] = newValue[key]
+    }
+  })
 }, { deep: true })
 
 const updateLocalProp = (name, value) => {
-  localProps.value[name] = value
-  emit('update:modelValue', { ...localProps.value })
+  if (localProps.value[name] !== value) {
+    localProps.value[name] = value
+    emit('update:modelValue', localProps.value)
+  }
 }
 
-const getComponentType = (type) => {
-  switch (type) {
-    case 'input':
-      return InputOption
-    case 'textarea':
-      return TextareaOption
-    default:
-      return null
-  }
+const getComponentType = (option) => {
+  return defineAsyncComponent(() => {
+    // Try to load from the package directory first
+    return import(/* @vite-ignore */ option.componentPath)
+      .catch(() => {
+        console.warn(`Failed to load component from package directory: ${option.componentPath}. Trying root directory.`)
+        // If package directory fails, try loading from the root directory
+        return import(/* @vite-ignore */ `/resources/js/IPBB/Options/${option.type.charAt(0).toUpperCase() + option.type.slice(1)}Option.vue`)
+          .catch(() => {
+            console.warn(`Failed to load component from root directory. Falling back to default.`)
+            // If both fail, fall back to the default (package directory)
+            return import(/* @vite-ignore */ `./options/${option.type.charAt(0).toUpperCase() + option.type.slice(1)}Option.vue`)
+          })
+      })
+  })
 }
 
 onMounted(() => {

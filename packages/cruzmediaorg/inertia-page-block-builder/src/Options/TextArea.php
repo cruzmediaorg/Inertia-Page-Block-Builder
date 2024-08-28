@@ -4,6 +4,12 @@ namespace Cruzmediaorg\InertiaPageBlockBuilder\Options;
 
 class TextArea extends Option
 {
+    public function __construct(string $label, string $name, array $attributes = [])
+    {
+        parent::__construct($label, $name, $attributes);
+        $this->setComponentPath('./options/TextareaOption.vue');
+    }
+
     public function toArray(): array
     {
         return [
@@ -11,6 +17,7 @@ class TextArea extends Option
             'label' => $this->label,
             'name' => $this->name,
             'attributes' => $this->attributes,
+            'componentPath' => $this->getComponentPath(),
         ];
     }
 
