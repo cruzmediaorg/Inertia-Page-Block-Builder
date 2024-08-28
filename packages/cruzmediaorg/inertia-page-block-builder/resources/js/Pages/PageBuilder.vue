@@ -1,8 +1,5 @@
 <template>
-  <div>
-    <h1>Page Builder</h1>
     <PageBuilderComponent />
-  </div>
 </template>
 
 <script>

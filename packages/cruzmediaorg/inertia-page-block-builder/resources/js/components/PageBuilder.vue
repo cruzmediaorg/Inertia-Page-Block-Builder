@@ -1,15 +1,71 @@
 <template>
-  <div class="flex flex-col h-screen bg-gray-100">
+  <div
+    class="flex flex-col h-screen bg-gray-100"
+    :class="{ 'mobile-preview': isMobilePreview }"
+  >
     <div class="bg-white shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
-          <h2 class="text-2xl font-bold text-gray-900">Editor</h2>
+          <h2 class="text-2xl font-bold text-gray-900">Editor2</h2>
           <div class="flex space-x-4">
-            <button class="text-gray-500 hover:text-gray-700">
-              <i class="fas fa-mobile-alt"></i>
+            <button
+              @click="toggleMobilePreview"
+              class="bg-white p-2 border rounded-md"
+              :class="{ 'text-blue-500': isMobilePreview }"
+            >
+              <svg
+                v-if="isMobilePreview"
+                class="w-6 h-6 text-gray-500"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5 4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4Zm12 12V5H7v11h10Zm-5 1a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H12Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <svg
+                v-else
+                class="w-6 h-6 text-gray-600"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 15v5m-3 0h6M4 11h16M5 15h14a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1Z"
+                />
+              </svg>
             </button>
-            <button class="text-gray-500 hover:text-gray-700">
-              <i class="fas fa-expand"></i>
+            <button @click="toggleFullScreen" class="bg-white p-2 border rounded-md">
+              <svg
+                class="w-6 h-6 text-gray-500"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0-4-5 5M8 20H4m0 0v-4m0 4 5-5m7 5h4m0 0v-4m0 4-5-5"
+                />
+              </svg>
             </button>
           </div>
         </div>
@@ -17,41 +73,75 @@
     </div>
     <div class="flex-1 overflow-hidden">
       <div class="flex h-full">
-        <div class="flex-1 overflow-y-auto p-6">
-          <div class="">
-         <div
-  v-for="(block, index) in blocks"
-  :key="index"
-  class="group relative" 
-  :class="{ 'ring-2 ring-blue-500': selectedBlock === index }"
-  @click="selectBlock(index)"
->
-              <component
-                :is="getBlockComponent(block)"
-                v-bind="block.props"
-              />
-              <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out">
-  <button @click.stop="editBlock(index)" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-2 hover:bg-blue-600">Edit</button>
-  <button @click.stop="deleteBlock(index)" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">Delete</button>
-</div>
-            </div>
+        <div
+          class="flex-1 overflow-y-auto"
+          :class="{ 'max-w-sm mx-auto': isMobilePreview }"
+        >
+          <draggable
+            v-if="blocks.length > 0"
+            v-model="blocks"
+            :item-key="(block) => block.id"
+            handle=".drag-handle"
+            @start="dragStart"
+            @end="dragEnd"
+          >
+            <template #item="{ element }">
+              <div
+                class="group relative"
+                :class="{
+                  'ring-2 ring-blue-500': selectedBlock === blocks.indexOf(element),
+                }"
+                @click="selectBlock(blocks.indexOf(element))"
+              >
+                <div
+                  class="drag-handle cursor-move absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out"
+                >
+                  <i class="fas fa-grip-vertical text-gray-400"></i>
+                </div>
+                <component :is="getBlockComponent(element)" v-bind="element.props" />
+                <BlockActions
+                  @edit="editBlock(blocks.indexOf(element))"
+                  @delete="deleteBlock(blocks.indexOf(element))"
+                  @duplicate="duplicateBlock(blocks.indexOf(element))"
+                />
+              </div>
+            </template>
+          </draggable>
+          <div v-else class="flex justify-center items-center p-5 flex-col h-full min-w-80 bg-white">
+            <p class="text-gray-500 text-center font-bold">No blocks added</p>
+            <p class="text-gray-500 text-center">Drag and drop a block to get started</p>
+            
           </div>
         </div>
-        <div class="w-80 bg-white border-l border-gray-200 overflow-y-auto">
+        <div
+          class="w-80 bg-white border-l border-gray-200 overflow-y-auto absolute right-0 border-t h-full"
+        >
           <div class="p-6">
             <div v-if="selectedBlock !== null && isEditing">
-              <h3 class="text-lg font-medium text-gray-900 mb-4">Edit {{ blocks[selectedBlock].name }}</h3>
+              <h3 class="text-lg font-medium text-gray-900 mb-4">
+                Edit {{ blocks[selectedBlock].name }}
+              </h3>
               <component
                 :is="blocks[selectedBlock].options"
                 v-model="blocks[selectedBlock].props"
                 @update:modelValue="updateBlockProps"
               />
-              <button @click="finishEditing" class="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Done</button>
+              <button
+                @click="finishEditing"
+                class="mt-4 w-full bg-black text-white px-4 py-2 rounded hover:bg-gray-900"
+              >
+                Done
+              </button>
             </div>
             <div v-else>
               <h3 class="text-lg font-medium text-gray-900 mb-4">Blocks</h3>
               <div class="mb-4">
-                <input type="text" placeholder="Search blocks" v-model="searchQuery" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                <input
+                  type="text"
+                  placeholder="Search blocks"
+                  v-model="searchQuery"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
               <div class="space-y-2">
                 <button
@@ -72,105 +162,150 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, defineAsyncComponent } from 'vue'
-import FallbackBlock from './FallbackBlock.vue'
+import { ref, computed, defineAsyncComponent } from "vue";
+import draggable from "vuedraggable";
+import FallbackBlock from "./FallbackBlock.vue";
+import BlockActions from "./BlockActions.vue";
 
 const props = defineProps({
   registeredBlocks: {
     type: Array,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const blocks = ref([])
-const selectedBlock = ref(null)
-const isEditing = ref(false)
-const searchQuery = ref('')
+const blocks = ref([]);
+const selectedBlock = ref(null);
+const isEditing = ref(false);
+const searchQuery = ref("");
+const drag = ref(false);
+const isDragging = ref(false);
 
 const availableBlocks = computed(() => {
   if (!Array.isArray(props.registeredBlocks)) {
-    console.error('registeredBlocks is not an array:', props.registeredBlocks);
+    console.error("registeredBlocks is not an array:", props.registeredBlocks);
     return [];
   }
-  
-  return props.registeredBlocks.map(block => ({
+
+  return props.registeredBlocks.map((block) => ({
     name: block.name,
     reference: block.reference,
     component: defineAsyncComponent({
-      loader: () => import(/* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.render}.vue`),
+      loader: () =>
+        import(
+          /* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.render}.vue`
+        ),
       error: FallbackBlock,
       onError: (error, retry, fail, attempts) => {
         if (attempts <= 3) {
-          retry()
+          retry();
         } else {
-          console.error(`Failed to load component: ${block.render}`, error)
-          fail()
+          console.error(`Failed to load component: ${block.render}`, error);
+          fail();
         }
-      }
+      },
     }),
     options: defineAsyncComponent({
-      loader: () => import(/* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.options}.vue`),
+      loader: () =>
+        import(
+          /* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.options}.vue`
+        ),
       error: FallbackBlock,
       onError: (error, retry, fail, attempts) => {
         if (attempts <= 3) {
-          retry()
+          retry();
         } else {
-          console.error(`Failed to load component: ${block.options}`, error)
-          fail()
+          console.error(`Failed to load component: ${block.options}`, error);
+          fail();
         }
-      }
+      },
     }),
     defaultProps: block.data,
-    icon: 'fas fa-cube',
-  }))
-})
+    icon: "fas fa-cube",
+  }));
+});
 
 const filteredBlocks = computed(() => {
-  return availableBlocks.value.filter(block => 
+  return availableBlocks.value.filter((block) =>
     block.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
+  );
+});
 
 const addBlock = (block) => {
   blocks.value.push({
     ...block,
     props: { ...block.defaultProps },
-  })
-  selectedBlock.value = blocks.value.length - 1
-}
+    id: Date.now(), // Ensure each block has a unique id
+  });
+  selectedBlock.value = blocks.value.length - 1;
+};
 
 const selectBlock = (index) => {
-  selectedBlock.value = index
-  isEditing.value = false
-}
+  selectedBlock.value = index;
+  editBlock(index);
+};
 
 const editBlock = (index) => {
-  selectedBlock.value = index
-  isEditing.value = true
-}
+  selectedBlock.value = index;
+  isEditing.value = true;
+};
 
 const deleteBlock = (index) => {
-  blocks.value.splice(index, 1)
+  blocks.value.splice(index, 1);
   if (selectedBlock.value === index) {
-    selectedBlock.value = null
-    isEditing.value = false
+    selectedBlock.value = null;
+    isEditing.value = false;
   }
-}
+};
+
+const duplicateBlock = (index) => {
+  blocks.value.push({
+    ...blocks.value[index],
+    id: Date.now(),
+  });
+};
 
 const updateBlockProps = (newProps) => {
   if (selectedBlock.value !== null) {
-    blocks.value[selectedBlock.value].props = newProps
+    blocks.value[selectedBlock.value].props = newProps;
   }
-}
+};
 
 const finishEditing = () => {
-  isEditing.value = false
-}
+  isEditing.value = false;
+};
 
 const getBlockComponent = (block) => {
-  const foundBlock = availableBlocks.value.find(b => b.name === block.name);
+  const foundBlock = availableBlocks.value.find((b) => b.name === block.name);
   return foundBlock ? foundBlock.component : null;
-}
+};
+
+const dragStart = () => {
+  isDragging.value = true;
+};
+
+const dragEnd = () => {
+  isDragging.value = false;
+};
+
+const isMobilePreview = ref(false);
+const isFullScreen = ref(false);
+
+const toggleMobilePreview = () => {
+  isMobilePreview.value = !isMobilePreview.value;
+};
+
+const toggleFullScreen = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+    isFullScreen.value = true;
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+      isFullScreen.value = false;
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -295,5 +430,12 @@ const getBlockComponent = (block) => {
 
 .ipbb-block-actions button:hover {
   background-color: #0056b3;
+}
+
+.mobile-preview .flex-1 {
+  max-width: 375px;
+  margin: 0 auto;
+  border-left: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
 }
 </style>
