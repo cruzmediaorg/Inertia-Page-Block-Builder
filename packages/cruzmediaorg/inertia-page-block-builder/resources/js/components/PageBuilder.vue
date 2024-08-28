@@ -113,10 +113,11 @@
           </div>
         </div>
         <div
-          class="w-full md:w-80 border-t md:border-l border-gray-200 overflow-y-auto md:absolute md:right-0 md:h-full"
+          class="w-full md:w-80 border-t md:border-l bg-white border-gray-200 overflow-y-auto md:absolute md:right-0 md:h-full"
         >
           <div class="p-6">
-            <div v-if="selectedBlock !== null && isEditing">
+            <div v-if="selectedBlock !== null && isEditing" class="space-y-4 p-4 bg-white rounded-lg divide">
+
               <h3 class="text-lg font-medium text-gray-900 mb-4">
                 Edit {{ blocks[selectedBlock].name }}
               </h3>
