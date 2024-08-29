@@ -12,7 +12,7 @@ Built with Laravel 11, Inertia.js, Vue 3.
 - Vue 3
 - Inertia.js 1.0
 - Laravel ^10
-- 
+  
 ## Usage/Examples
 
 #### Creating a New Block:
