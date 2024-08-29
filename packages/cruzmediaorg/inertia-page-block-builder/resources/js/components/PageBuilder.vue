@@ -112,7 +112,7 @@
             <p class="text-gray-500 text-center">Drag and drop a block to get started</p>
           </div>
         </div>
-        <div class="w-full h-96 md:w-80 border-t md:border-l bg-white border-gray-200 overflow-y-auto md:absolute md:right-0  relative">
+        <div class="w-full h-[90vh] md:w-80 border-t md:border-l bg-white border-gray-200 overflow-y-auto md:absolute md:right-0  relative">
           <div class="p-6">
             <div
               v-if="selectedBlock !== null && isEditing"
@@ -158,7 +158,7 @@
               </div>
             </div>
           </div>
-          <div class="absolute bottom-0 w-full p-4">
+          <div class="w-full p-4">
             <button @click="saveBlocks" class="w-full bg-black text-white px-4 py-2 rounded hover:bg-gray-900">
               Save
             </button>
