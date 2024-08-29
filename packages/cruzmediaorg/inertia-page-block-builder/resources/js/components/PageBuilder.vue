@@ -49,10 +49,23 @@
               </svg>
             </button>
             <button @click="toggleFullScreen" class="bg-white p-2 border rounded-md">
-              <svg class="w-6 h-6 text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0-4-5 5M8 20H4m0 0v-4m0 4 5-5m7 5h4m0 0v-4m0 4-5-5"/>
-</svg>
-
+              <svg
+                class="w-6 h-6 text-gray-600"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0-4-5 5M8 20H4m0 0v-4m0 4 5-5m7 5h4m0 0v-4m0 4-5-5"
+                />
+              </svg>
             </button>
           </div>
         </div>
@@ -99,12 +112,12 @@
             <p class="text-gray-500 text-center">Drag and drop a block to get started</p>
           </div>
         </div>
-        <div
-          class="w-full md:w-80 border-t md:border-l bg-white border-gray-200 overflow-y-auto md:absolute md:right-0 md:h-full"
-        >
+        <div class="w-full h-96 md:w-80 border-t md:border-l bg-white border-gray-200 overflow-y-auto md:absolute md:right-0  relative">
           <div class="p-6">
-            <div v-if="selectedBlock !== null && isEditing" class="space-y-4 p-4 bg-white rounded-lg divide">
-
+            <div
+              v-if="selectedBlock !== null && isEditing"
+              class="space-y-4 p-4 bg-white rounded-lg divide"
+            >
               <h3 class="text-lg font-medium text-gray-900 mb-4">
                 Edit {{ blocks[selectedBlock].name }}
               </h3>
@@ -145,18 +158,13 @@
               </div>
             </div>
           </div>
+          <div class="absolute bottom-0 w-full p-4">
+            <button @click="saveBlocks" class="w-full bg-black text-white px-4 py-2 rounded hover:bg-gray-900">
+              Save
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- Add Save button and JSON preview -->
-    <div class="p-4">
-      <button
-        @click="saveBlocks"
-        class="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        Save Blocks
-      </button>
-      <pre v-if="jsonPreview" class="bg-gray-100 p-4 rounded overflow-auto max-h-60">{{ jsonPreview }}</pre>
     </div>
   </div>
 </template>
@@ -165,7 +173,7 @@ import { ref, computed, defineAsyncComponent, watch } from "vue";
 import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
-import DynamicOptions from './DynamicOptions.vue';
+import DynamicOptions from "./DynamicOptions.vue";
 import "../../css/style.css";
 
 const props = defineProps({
@@ -173,13 +181,19 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  data: {
+    type: Array,
+    required: false,
+    default: () => [],
+  },
 });
 
-const blocks = ref([]);
+const emit =defineEmits(['save']);
+
+const blocks = ref(props.data);
 const selectedBlock = ref(null);
 const isEditing = ref(false);
 const searchQuery = ref("");
-const drag = ref(false);
 const isDragging = ref(false);
 
 const draggedBlock = ref(null);
@@ -309,26 +323,22 @@ const toggleFullScreen = () => {
 };
 
 const containerClass = computed(() => ({
-  "w-full min-w-[450px]":isMobilePreview.value,
+  "w-full min-w-[450px]": isMobilePreview.value,
   "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
 
-const jsonPreview = ref(null);
 
 const saveBlocks = () => {
-  const blocksData = blocks.value.map(block => ({
+  const blocksData = blocks.value.map((block) => ({
+    id: block.id,
     name: block.name,
     reference: block.reference,
     props: block.props,
-    id: block.id
+    options: block.options,
   }));
-  
-  const jsonData = JSON.stringify(blocksData, null, 2);
-  jsonPreview.value = jsonData;
-};
 
+  emit('save', JSON.stringify(blocksData));
+};
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
