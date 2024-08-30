@@ -49,41 +49,51 @@
                   <span class="text-sm text-gray-600">{{ getContainerName(container.type) }}</span>
                 </div>
                 <div class="flex flex-wrap -mx-2">
-                  <template v-for="(block, index) in getBlocksWithPlaceholders(container)" :key="block.id || `placeholder-${index}`">
-                    <div :class="getBlockWrapperClass(container.type)" :data-block-id="block.id">
-                      <template v-if="block.isPlaceholder">
-                        <div 
-                          class="block-placeholder h-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center"
-                          @dragover.prevent
-                          @drop.stop="handleDrop($event, container.id, index)"
-                        >
-                          <p class="text-gray-400 text-sm">Drag a block here</p>
-                        </div>
-                      </template>
-                      <template v-else>
-                        <div
-                          class="group relative h-full bg-white border border-gray-200 rounded-md shadow-sm p-2"
-                          :class="{
-                            'ring-2 ring-blue-500': selectedBlock === block.id,
-                          }"
-                          @click="selectBlock(block.id)"
-                        >
-                          <div class="block-drag-handle absolute top-0 left-0 cursor-move p-1 bg-gray-100 rounded-tl">
-                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                            </svg>
+                  <draggable
+                    :list="getBlocksWithPlaceholders(container)"
+                    :item-key="(block) => block.id || block.placeholderId"
+                    handle=".block-drag-handle"
+                    group="blocks"
+                    class="flex flex-wrap w-full"
+                    @start="dragStart"
+                    @end="dragEnd"
+                  >
+                    <template #item="{ element: block }">
+                      <div :class="getBlockWrapperClass(container.type)" :data-block-id="block.id">
+                        <template v-if="block.isPlaceholder">
+                          <div 
+                            class="block-placeholder h-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center"
+                            @dragover.prevent
+                            @drop.stop="handleDrop($event, container.id, getBlocksWithPlaceholders(container).indexOf(block))"
+                          >
+                            <p class="text-gray-400 text-sm">Drag a block here</p>
                           </div>
-                          <component :is="getBlockComponent(block)" v-bind="block.props" />
-                          <BlockActions
-                            class="block-actions"
-                            @edit="editBlock(block.id)"
-                            @delete="deleteBlock(container.id, block.id)"
-                            @duplicate="duplicateBlock(container.id, block.id)"
-                          />
-                        </div>
-                      </template>
-                    </div>
-                  </template>
+                        </template>
+                        <template v-else>
+                          <div
+                            class="group relative h-full bg-white border border-gray-200 rounded-md shadow-sm p-2"
+                            :class="{
+                              'ring-2 ring-blue-500': selectedBlock === block.id,
+                            }"
+                            @click="selectBlock(block.id)"
+                          >
+                            <div class="block-drag-handle absolute top-0 left-0 cursor-move p-1 bg-gray-100 rounded-tl">
+                              <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                              </svg>
+                            </div>
+                            <component :is="getBlockComponent(block)" v-bind="block.props" />
+                            <BlockActions
+                              class="block-actions"
+                              @edit="editBlock(block.id)"
+                              @delete="deleteBlock(container.id, block.id)"
+                              @duplicate="duplicateBlock(container.id, block.id)"
+                            />
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </draggable>
                 </div>
               </div>
             </template>
@@ -178,18 +188,46 @@ const availableBlocks = computed(() => {
   }));
 });
 
+const dragStart = (evt) => {
+  isDragging.value = true;
+  if (evt.item.dataset.blockId) {
+    draggedItem.value = { type: 'block', id: evt.item.dataset.blockId };
+  } else if (evt.item.dataset.containerId) {
+    draggedItem.value = { type: 'container', id: evt.item.dataset.containerId };
+  }
+};
+
+const dragEnd = () => {
+  isDragging.value = false;
+  draggedItem.value = null;
+};
+
 const handleDrop = (event, containerId, index) => {
   console.log('Drop event triggered', { containerId, index });
   
-  // Prevent default to avoid opening the dropped content as a link in some browsers
   event.preventDefault();
 
-  // Check if we've already processed this drop event
-  if (event.dataTransfer.dropEffect !== 'none') {
-    console.log('Drop already processed');
-    return;
+  // Check if we're dragging an existing block
+  if (draggedItem.value && draggedItem.value.type === 'block') {
+    const sourceContainer = containers.value.find(c => c.blocks.some(b => b.id === draggedItem.value.id));
+    const targetContainer = containers.value.find(c => c.id === containerId);
+
+    if (sourceContainer && targetContainer) {
+      const blockToMove = sourceContainer.blocks.find(b => b.id === draggedItem.value.id);
+      
+      // Remove the block from the source container
+      sourceContainer.blocks = sourceContainer.blocks.filter(b => b.id !== draggedItem.value.id);
+      
+      // Add the block to the target container
+      const targetIndex = index !== undefined ? index : targetContainer.blocks.length;
+      targetContainer.blocks.splice(targetIndex, 0, blockToMove);
+
+      draggedItem.value = null;
+      return;
+    }
   }
 
+  // If not dragging an existing block, proceed with the original logic
   let data;
   try {
     data = JSON.parse(event.dataTransfer.getData('text/plain'));
@@ -219,10 +257,7 @@ const handleDrop = (event, containerId, index) => {
     }
   }
 
-  // Mark this drop as processed
   event.dataTransfer.dropEffect = 'move';
-
-  // Clear the drag data
   event.dataTransfer.clearData();
 };
 
@@ -357,14 +392,6 @@ const getBlockComponent = (block) => {
   return foundBlock ? foundBlock.component : null;
 };
 
-const dragStart = () => {
-  isDragging.value = true;
-};
-
-const dragEnd = () => {
-  isDragging.value = false;
-};
-
 const isMobilePreview = ref(false);
 const isFullScreen = ref(false);
 
@@ -441,23 +468,18 @@ const getContainerBlocksPerRow = (type) => {
 
 const getBlocksWithPlaceholders = (container) => {
   const blocksPerRow = getContainerBlocksPerRow(container.type);
-  const result = [];
-  const existingBlocksCount = container.blocks.length;
+  const result = [...container.blocks];
+  const existingBlocksCount = result.length;
 
-  // If the container is already full or has more blocks than a single row,
-  // don't add any placeholders
-  if (existingBlocksCount >= blocksPerRow) {
-    return container.blocks;
-  }
-
-  // Only add placeholders to complete the current row
-  const placeholdersToAdd = blocksPerRow - existingBlocksCount;
-
-  for (let i = 0; i < blocksPerRow; i++) {
-    if (i < existingBlocksCount) {
-      result.push(container.blocks[i]);
-    } else if (i < existingBlocksCount + placeholdersToAdd) {
-      result.push({ isPlaceholder: true, id: `placeholder-${container.id}-${i}` });
+  // Always add placeholders if there are no blocks
+  if (existingBlocksCount === 0 || existingBlocksCount < blocksPerRow) {
+    const placeholdersToAdd = blocksPerRow - existingBlocksCount;
+    for (let i = 0; i < placeholdersToAdd; i++) {
+      result.push({
+        isPlaceholder: true,
+        id: `placeholder-${container.id}-${i}`,
+        placeholderId: `placeholder-${container.id}-${i}`
+      });
     }
   }
 
