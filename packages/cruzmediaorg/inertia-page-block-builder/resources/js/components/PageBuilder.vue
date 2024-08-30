@@ -3,7 +3,7 @@
     class="flex flex-col h-screen bg-gray-100"
     :class="{ 'mobile-preview': isMobilePreview }"
   >
-    <div class="bg-white shadow-sm">
+    <div class="bg-white shadow-sm" @click="selectContainer(null)">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
           <div></div>
@@ -159,6 +159,7 @@ import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
 import Sidebar from "./Sidebar.vue";
+import useContainerAttributes from "../composables/useContainerAttributes";
 import "../../css/style.css";
 
 const props = defineProps({
@@ -175,21 +176,11 @@ const props = defineProps({
 
 const emit = defineEmits(['save']);
 
+const { createAttributes } = useContainerAttributes();
+
 const containers = ref(props.data.map(container => ({
   ...container,
-  attributes: {
-    backgroundColor: '#ffffff',
-    paddingTop: '0px',
-    paddingRight: '0px',
-    paddingBottom: '0px',
-    paddingLeft: '0px',
-    marginTop: '0px',
-    marginRight: '0px',
-    marginBottom: '0px',
-    marginLeft: '0px',
-    borderRadius: '0px',
-    hideOnMobile: false,
-  },
+  attributes: createAttributes(container.attributes),
 })));
 const selectedBlock = ref(null);
 const selectedBlockData = ref(null);
@@ -360,19 +351,7 @@ const addContainer = (type, position = containers.value.length) => {
       placeholderId: `placeholder-${Date.now()}-${index}`,
       index
     })),
-    attributes: {
-      backgroundColor: '#ffffff',
-      paddingTop: '0px',
-      paddingRight: '0px',
-      paddingBottom: '0px',
-      paddingLeft: '0px',
-      marginTop: '0px',
-      marginRight: '0px',
-      marginBottom: '0px',
-      marginLeft: '0px',
-      borderRadius: '0px',
-      hideOnMobile: false,
-    },
+    attributes: createAttributes(),
   };
   containers.value.splice(position, 0, newContainer);
   selectContainer(newContainer.id);

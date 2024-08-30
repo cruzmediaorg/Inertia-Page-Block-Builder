@@ -50,31 +50,27 @@
             </div>
 
             <!-- Padding -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Padding</label>
-              <div class="grid grid-cols-2 gap-2">
-                <div v-for="side in ['Top', 'Right', 'Bottom', 'Left']" :key="side">
-                  <label class="block text-xs text-gray-500 mb-1">{{ side }}</label>
-                  <input type="text" v-model="selectedContainer.attributes[`padding${side}`]" class="w-full px-2 py-1 border rounded-md" @change="updateContainerAttributes">
-                </div>
-              </div>
-            </div>
+            <SpacingInput
+              label="Padding"
+              v-model="containerPadding"
+              @update:modelValue="updateContainerPadding"
+            />
 
             <!-- Margin -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Margin</label>
-              <div class="grid grid-cols-2 gap-2">
-                <div v-for="side in ['Top', 'Right', 'Bottom', 'Left']" :key="side">
-                  <label class="block text-xs text-gray-500 mb-1">{{ side }}</label>
-                  <input type="text" v-model="selectedContainer.attributes[`margin${side}`]" class="w-full px-2 py-1 border rounded-md" @change="updateContainerAttributes">
-                </div>
-              </div>
-            </div>
+            <SpacingInput
+              label="Margin"
+              v-model="containerMargin"
+              @update:modelValue="updateContainerMargin"
+            />
 
             <!-- Border Radius -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Border Radius</label>
-              <input type="text" v-model="selectedContainer.attributes.borderRadius" class="w-full px-2 py-1 border rounded-md" @change="updateContainerAttributes">
+              <NumberStepper
+                v-model="selectedContainer.attributes.borderRadius"
+                @update:modelValue="updateContainerAttributes"
+                :step="1"
+              />
             </div>
 
             <!-- Hide on Mobile -->
@@ -83,6 +79,17 @@
                 <input type="checkbox" v-model="selectedContainer.attributes.hideOnMobile" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" @change="updateContainerAttributes">
                 <span class="ml-2 text-sm text-gray-600">Hide on Mobile</span>
               </label>
+            </div>
+
+            <!-- Block Gap -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Block Gap</label>
+              <NumberStepper
+                v-model="selectedContainer.attributes.blockGap"
+                @update:modelValue="updateContainerAttributes"
+                :step="1"
+                :unit="'px'"
+              />
             </div>
           </div>
         </div>
@@ -125,12 +132,12 @@
         <!-- Container Types -->
         <div class="mb-6">
           <h4 class="font-medium text-gray-700 mb-2">Containers</h4>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 gap-2">
             <div v-for="containerType in containerTypes" :key="containerType.type" 
-                 class="border rounded-md p-2 cursor-move hover:bg-gray-50 transition-colors duration-200"
+                 class=""
                  draggable="true"
                  @dragstart="startDragContainer(containerType, $event)">
-              {{ containerType.name }}
+              <ContainerPreview :type="containerType.type" />
             </div>
           </div>
         </div>
@@ -153,8 +160,10 @@
         <div>
           <h4 class="font-medium text-gray-700 mb-2">Layers</h4>
           <div v-for="container in containers" :key="container.id" class="mb-4">
-            <h5 class="font-medium text-gray-600 mb-1">{{ getContainerName(container.type) }}</h5>
-            <ul class="space-y-1">
+            <div @click="selectContainer(container.id)" class="cursor-pointer">
+              <ContainerPreview :type="container.type" />
+            </div>
+            <ul class="space-y-1 mt-2">
               <li v-for="block in container.blocks" :key="block.id" class="flex items-center">
                 <button 
                   @click="selectBlock(block.id)" 
@@ -175,6 +184,10 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import DynamicOptions from './DynamicOptions.vue';
+import SpacingInput from './SpacingInput.vue';
+import NumberStepper from './NumberStepper.vue';
+import ContainerPreview from './ContainerPreview.vue';
+import useContainerAttributes from "../composables/useContainerAttributes";
 
 const props = defineProps({
   containers: {
@@ -208,6 +221,8 @@ const emit = defineEmits(['add-container', 'add-block', 'update-block-props', 'f
 const searchQuery = ref('');
 const selectedBlockProps = ref({});
 const activeTab = ref('BLOCKS');
+
+const { defaultAttributes } = useContainerAttributes();
 
 const tabs = computed(() => {
   if (props.selectedContainer) {
@@ -293,6 +308,44 @@ const selectContainerOfBlock = () => {
 
 const deselectContainer = () => {
   emit('deselect-container');
+};
+
+const containerPadding = computed(() => ({
+  Top: props.selectedContainer?.attributes.paddingTop || defaultAttributes.paddingTop,
+  Right: props.selectedContainer?.attributes.paddingRight || defaultAttributes.paddingRight,
+  Bottom: props.selectedContainer?.attributes.paddingBottom || defaultAttributes.paddingBottom,
+  Left: props.selectedContainer?.attributes.paddingLeft || defaultAttributes.paddingLeft,
+}));
+
+const containerMargin = computed(() => ({
+  Top: props.selectedContainer?.attributes.marginTop || defaultAttributes.marginTop,
+  Right: props.selectedContainer?.attributes.marginRight || defaultAttributes.marginRight,
+  Bottom: props.selectedContainer?.attributes.marginBottom || defaultAttributes.marginBottom,
+  Left: props.selectedContainer?.attributes.marginLeft || defaultAttributes.marginLeft,
+}));
+
+const updateContainerPadding = (newPadding) => {
+  if (props.selectedContainer) {
+    props.selectedContainer.attributes.paddingTop = newPadding.Top;
+    props.selectedContainer.attributes.paddingRight = newPadding.Right;
+    props.selectedContainer.attributes.paddingBottom = newPadding.Bottom;
+    props.selectedContainer.attributes.paddingLeft = newPadding.Left;
+    updateContainerAttributes();
+  }
+};
+
+const updateContainerMargin = (newMargin) => {
+  if (props.selectedContainer) {
+    props.selectedContainer.attributes.marginTop = newMargin.Top;
+    props.selectedContainer.attributes.marginRight = newMargin.Right;
+    props.selectedContainer.attributes.marginBottom = newMargin.Bottom;
+    props.selectedContainer.attributes.marginLeft = newMargin.Left;
+    updateContainerAttributes();
+  }
+};
+
+const selectContainer = (containerId) => {
+  emit('select-container', containerId);
 };
 </script>
 
