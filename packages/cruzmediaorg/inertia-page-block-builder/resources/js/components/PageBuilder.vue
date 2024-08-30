@@ -50,7 +50,7 @@
                 </div>
                 <div class="flex flex-wrap -mx-2">
                   <draggable
-                    :list="getBlocksWithPlaceholders(container)"
+                    :list="container.blocks"
                     :item-key="(block) => block.id || block.placeholderId"
                     handle=".block-drag-handle"
                     group="blocks"
@@ -58,13 +58,13 @@
                     @start="dragStart"
                     @end="dragEnd"
                   >
-                    <template #item="{ element: block }">
+                    <template #item="{ element: block, index }">
                       <div :class="getBlockWrapperClass(container.type)" :data-block-id="block.id">
                         <template v-if="block.isPlaceholder">
                           <div 
                             class="block-placeholder h-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center"
                             @dragover.prevent
-                            @drop.stop="handleDrop($event, container.id, getBlocksWithPlaceholders(container).indexOf(block))"
+                            @drop.stop="handleDrop($event, container.id, index)"
                           >
                             <p class="text-gray-400 text-sm">Drag a block here</p>
                           </div>
@@ -214,13 +214,18 @@ const handleDrop = (event, containerId, index) => {
 
     if (sourceContainer && targetContainer) {
       const blockToMove = sourceContainer.blocks.find(b => b.id === draggedItem.value.id);
+      const sourceIndex = sourceContainer.blocks.findIndex(b => b.id === draggedItem.value.id);
       
-      // Remove the block from the source container
-      sourceContainer.blocks = sourceContainer.blocks.filter(b => b.id !== draggedItem.value.id);
+      // Remove the block from the source container and replace with a placeholder
+      sourceContainer.blocks[sourceIndex] = {
+        isPlaceholder: true,
+        id: `placeholder-${Date.now()}-${sourceIndex}`,
+        placeholderId: `placeholder-${Date.now()}-${sourceIndex}`,
+        index: sourceIndex
+      };
       
-      // Add the block to the target container
-      const targetIndex = index !== undefined ? index : targetContainer.blocks.length;
-      targetContainer.blocks.splice(targetIndex, 0, blockToMove);
+      // Add the block to the target container at the specific index
+      addBlock(blockToMove, targetContainer.id, index);
 
       draggedItem.value = null;
       return;
@@ -252,8 +257,7 @@ const handleDrop = (event, containerId, index) => {
     }
     const container = containers.value.find(c => c.id === targetContainerId);
     if (container) {
-      const dropIndex = index !== undefined ? index : getDropIndexInContainer(event, container);
-      addBlock(data.block, targetContainerId, dropIndex);
+      addBlock(data.block, targetContainerId, index);
     }
   }
 
@@ -308,37 +312,36 @@ const getNearestContainerId = (event) => {
 };
 
 const addContainer = (type, position = containers.value.length) => {
+  const blocksPerRow = getContainerBlocksPerRow(type);
   const newContainer = {
     id: Date.now().toString(),
     type,
-    blocks: [],
+    blocks: Array(blocksPerRow).fill().map((_, index) => ({
+      isPlaceholder: true,
+      id: `placeholder-${Date.now()}-${index}`,
+      placeholderId: `placeholder-${Date.now()}-${index}`,
+      index
+    })),
   };
   containers.value.splice(position, 0, newContainer);
 };
 
-const addBlock = (block, containerId = null, position = 0) => {
-  console.log('Adding block', { block, containerId, position });
+const addBlock = (block, containerId, index) => {
+  console.log('Adding block', { block, containerId, index });
+
+  const container = containers.value.find(c => c.id === containerId);
+  if (!container) return;
 
   const newBlock = {
     ...JSON.parse(JSON.stringify(block)),
     props: JSON.parse(JSON.stringify(block.defaultProps)),
-    id: Date.now().toString(),
+    id: block.id || Date.now().toString(),
   };
 
-  if (containerId) {
-    const container = containers.value.find(c => c.id === containerId);
-    if (container) {
-      container.blocks.splice(position, 0, newBlock);
-      console.log('Block added to container', { containerId, blockId: newBlock.id });
-    }
-  } else if (containers.value.length > 0) {
-    containers.value[0].blocks.splice(position, 0, newBlock);
-    console.log('Block added to first container', { containerId: containers.value[0].id, blockId: newBlock.id });
-  } else {
-    addContainer('full');
-    containers.value[0].blocks.push(newBlock);
-    console.log('New container created and block added', { containerId: containers.value[0].id, blockId: newBlock.id });
-  }
+  // Replace the placeholder at the specified index with the new block
+  container.blocks[index] = newBlock;
+
+  console.log('Block added to container', { containerId, blockId: newBlock.id, index });
 };
 
 const selectBlock = (id) => {
@@ -354,7 +357,15 @@ const editBlock = (id) => {
 const deleteBlock = (containerId, blockId) => {
   const container = containers.value.find(c => c.id === containerId);
   if (container) {
-    container.blocks = container.blocks.filter(b => b.id !== blockId);
+    const index = container.blocks.findIndex(b => b.id === blockId);
+    if (index !== -1) {
+      container.blocks[index] = {
+        isPlaceholder: true,
+        id: `placeholder-${Date.now()}-${index}`,
+        placeholderId: `placeholder-${Date.now()}-${index}`,
+        index
+      };
+    }
   }
   if (selectedBlock.value === blockId) {
     selectedBlock.value = null;
@@ -464,26 +475,6 @@ const saveBlocks = () => {
 const getContainerBlocksPerRow = (type) => {
   const containerConfig = containerTypes.find(ct => ct.type === type);
   return containerConfig ? containerConfig.blocksPerRow : 1;
-};
-
-const getBlocksWithPlaceholders = (container) => {
-  const blocksPerRow = getContainerBlocksPerRow(container.type);
-  const result = [...container.blocks];
-  const existingBlocksCount = result.length;
-
-  // Always add placeholders if there are no blocks
-  if (existingBlocksCount === 0 || existingBlocksCount < blocksPerRow) {
-    const placeholdersToAdd = blocksPerRow - existingBlocksCount;
-    for (let i = 0; i < placeholdersToAdd; i++) {
-      result.push({
-        isPlaceholder: true,
-        id: `placeholder-${container.id}-${i}`,
-        placeholderId: `placeholder-${container.id}-${i}`
-      });
-    }
-  }
-
-  return result;
 };
 </script>
 
