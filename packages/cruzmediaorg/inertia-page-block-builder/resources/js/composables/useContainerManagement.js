@@ -13,6 +13,7 @@ export default function useContainerManagement(initialContainers = []) {
   const selectedContainer = computed(() => 
     containers.value.find(c => c.id === selectedContainerId.value) || null
   );
+  
 
   const addContainer = (type, position = containers.value.length) => {
     const blocksPerRow = getContainerBlocksPerRow(type);

@@ -1,43 +1,64 @@
 <template>
   <div class="w-full h-[90vh] md:w-80 border-t md:border-l bg-white border-gray-200 overflow-y-auto md:absolute md:right-0 relative">
     <div class="p-4">
-      <div class="mb-4 border-b">
-        <nav class="-mb-px flex" aria-label="Tabs">
-          <button
-            v-for="tab in tabs"
-            :key="tab"
-            @click="activeTab = tab"
-            :class="[
-              activeTab === tab
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm'
-            ]"
+      <div class="mb-4">
+        <div 
+          v-for="tab in ['Structures', 'Blocks']" 
+          :key="tab" 
+          class="border-b"
+        >
+          <button 
+            @click="toggleAccordion(tab)"
+            class="w-full p-2 text-left flex justify-between items-center hover:bg-gray-50"
           >
-            {{ tab }}
+            <span>{{ tab }}</span>
+            <svg 
+              class="w-5 h-5 transition-transform" 
+              :class="{ 'rotate-180': activeContentTab === tab.toLowerCase() }"
+              fill="currentColor" 
+              viewBox="0 0 20 20" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
           </button>
-        </nav>
-      </div>
-
-      <!-- Container editing -->
-      <div v-if="selectedContainer">
-        <div v-if="activeTab === 'BLOCKS'">
-          <!-- Available Blocks -->
-          <div class="mb-6">
-            <h4 class="font-medium text-gray-700 mb-2">Blocks</h4>
-            <input v-model="searchQuery" type="text" placeholder="Search blocks..." class="w-full mb-2 p-2 border rounded-md">
-            <div class="grid grid-cols-2 gap-2">
-              <div v-for="block in filteredBlocks" :key="block.reference" 
-                   class="border rounded-md p-2 cursor-move hover:bg-gray-50 transition-colors duration-200"
-                   draggable="true"
-                   @dragstart="startDragBlock(block, $event)">
-                {{ block.name }}
+          <div v-show="activeContentTab === tab.toLowerCase()" class="p-2">
+            <!-- Content for Structures -->
+            <div v-if="tab === 'Structures'">
+              <div class="mb-6">
+                <h4 class="font-medium text-gray-700 mb-2">Containers</h4>
+                <div class="grid grid-cols-1 gap-2">
+                  <div v-for="containerType in containerTypes" :key="containerType.type" 
+                       class=""
+                       draggable="true"
+                       @dragstart="startDragContainer(containerType, $event)">
+                    <ContainerPreview :type="containerType.type" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Content for Blocks -->
+            <div v-else>
+              <div class="mb-6">
+                <h4 class="font-medium text-gray-700 mb-2">Blocks</h4>
+                <input v-model="searchQuery" type="text" placeholder="Search blocks..." class="w-full mb-2 p-2 border rounded-md">
+                <div class="grid grid-cols-2 gap-2">
+                  <div v-for="block in filteredBlocks" :key="block.reference" 
+                       class="border rounded-md p-2 cursor-move hover:bg-gray-50 transition-colors duration-200"
+                       draggable="true"
+                       @dragstart="startDragBlock(block, $event)">
+                    {{ block.name }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div v-else-if="activeTab === 'LAYOUT'">
+      <!-- Container editing -->
+      <div v-if="selectedContainer">
+        <div v-if="activeTab === 'LAYOUT'">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Container Layout</h3>
           <div class="space-y-6">
             <!-- Background Color -->
@@ -142,56 +163,24 @@
         </div>
       </div>
 
-      <!-- Add Containers and Blocks -->
-      <div v-else>
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Add Elements</h3>
-        
-        <!-- Container Types -->
-        <div class="mb-6">
-          <h4 class="font-medium text-gray-700 mb-2">Containers</h4>
-          <div class="grid grid-cols-1 gap-2">
-            <div v-for="containerType in containerTypes" :key="containerType.type" 
-                 class=""
-                 draggable="true"
-                 @dragstart="startDragContainer(containerType, $event)">
-              <ContainerPreview :type="containerType.type" />
-            </div>
+      <!-- Layer view -->
+      <div v-if="!selectedContainer && !selectedBlock">
+        <h4 class="font-medium text-gray-700 mb-2">Layers</h4>
+        <div v-for="container in containers" :key="container.id" class="mb-4">
+          <div @click="selectContainer(container.id)" class="cursor-pointer">
+            <ContainerPreview :type="container.type" />
           </div>
-        </div>
-
-        <!-- Available Blocks -->
-        <div class="mb-6">
-          <h4 class="font-medium text-gray-700 mb-2">Blocks</h4>
-          <input v-model="searchQuery" type="text" placeholder="Search blocks..." class="w-full mb-2 p-2 border rounded-md">
-          <div class="grid grid-cols-2 gap-2">
-            <div v-for="block in filteredBlocks" :key="block.reference" 
-                 class="border rounded-md p-2 cursor-move hover:bg-gray-50 transition-colors duration-200"
-                 draggable="true"
-                 @dragstart="startDragBlock(block, $event)">
-              {{ block.name }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Layer view -->
-        <div>
-          <h4 class="font-medium text-gray-700 mb-2">Layers</h4>
-          <div v-for="container in containers" :key="container.id" class="mb-4">
-            <div @click="selectContainer(container.id)" class="cursor-pointer">
-              <ContainerPreview :type="container.type" />
-            </div>
-            <ul class="space-y-1 mt-2">
-              <li v-for="block in container.blocks" :key="block.id" class="flex items-center">
-                <button 
-                  @click="selectBlock(block.id)" 
-                  class="text-left w-full py-1 px-2 text-sm hover:bg-gray-100 rounded-md transition-colors duration-200"
-                  :class="{ 'bg-indigo-100': selectedBlock === block.id }"
-                >
-                  {{ block.name || 'Empty' }}
-                </button>
-              </li>
-            </ul>
-          </div>
+          <ul class="space-y-1 mt-2">
+            <li v-for="block in container.blocks" :key="block.id" class="flex items-center">
+              <button 
+                @click="selectBlock(block.id)" 
+                class="text-left w-full py-1 px-2 text-sm hover:bg-gray-100 rounded-md transition-colors duration-200"
+                :class="{ 'bg-indigo-100': selectedBlock === block.id }"
+              >
+                {{ block.name || 'Empty' }}
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -238,6 +227,7 @@ const emit = defineEmits(['add-container', 'add-block', 'update-block-props', 'f
 const searchQuery = ref('');
 const selectedBlockProps = ref({});
 const activeTab = ref('BLOCKS');
+const activeContentTab = ref('structures');
 
 const { defaultAttributes } = useContainerAttributes();
 
@@ -363,6 +353,10 @@ const updateContainerMargin = (newMargin) => {
 
 const selectContainer = (containerId) => {
   emit('select-container', containerId);
+};
+
+const toggleAccordion = (tab) => {
+  activeContentTab.value = activeContentTab.value === tab.toLowerCase() ? '' : tab.toLowerCase();
 };
 </script>
 

@@ -36,13 +36,14 @@
           @dragover.prevent
           @drop="handleDrop"
           @click="selectContainer(null)"
-        >
+        > 
           <draggable
             v-model="containers"
             :item-key="(container) => container.id"
             handle=".container-drag-handle"
-            @start="dragStart"
+            @start="dragStart($event, 'container')"
             @end="dragEnd"
+            group="containers"
           >
           <template #item="{ element: container }">
               <div 
@@ -58,10 +59,9 @@
                   display: container.attributes.hideOnMobile && isMobilePreview ? 'none' : 'block',
                 }"
               >
-                <!-- Add this button for container selection -->
                 <button 
                   @click.stop="selectContainer(container.id)"
-                  class="absolute top-2 left-2 z-50 bg-white p-1 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-200"
+                  class="container-drag-handle absolute top-2 left-2 z-50 bg-white p-1 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-200"
                 >
                   <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
@@ -78,8 +78,9 @@
                     :item-key="(block) => block.id || block.placeholderId"
                     handle=".block-drag-handle"
                     group="blocks"
-                    @start="dragStart"
+                    @start="dragStart($event, 'block')"
                     @end="dragEnd"
+                    @change="(e) => moveBlock(e.moved.element.id, container.id, e.moved.newIndex)"
                     class="flex w-full">
                     <template #item="{ element: block, index }">
                       <div :data-block-id="block.id" :class="[getBlockWrapperClass(container.type, container.attributes), 'flex-grow']">
@@ -115,7 +116,7 @@
                 </div>
                 <div v-if="!hasPlaceholders(container)" 
                   :class="{ 'absolute -bottom-6 left-0 right-0 flex justify-center z-[10]': true, 'hidden': isMobilePreview }"
-                 class="container-drag-handle cursor-move absolute -bottom-6 left-0 right-0 flex justify-center z-[10]">
+                 class="cursor-move absolute -bottom-6 left-0 right-0 flex justify-center z-[10]">
                   <button @click="addNewRow(container)" class=" bg-white text-gray-500  rounded-b-md py-0 px-12 hover:bg-gray-100 transition-colors border-black">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -159,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, computed, defineAsyncComponent, watch } from "vue";
+import { ref, computed, defineAsyncComponent, watch, reactive, markRaw } from "vue";
 import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
@@ -199,6 +200,8 @@ const {
 const selectedBlock = ref(null);
 const selectedBlockData = ref(null);
 const isEditing = ref(false);
+const isMobilePreview = ref(false);
+const isFullScreen = ref(false);
 
 const availableBlocks = computed(() => {
   if (!Array.isArray(props.registeredBlocks)) {
@@ -208,7 +211,7 @@ const availableBlocks = computed(() => {
   return props.registeredBlocks.map((block) => ({
     name: block.name,
     reference: block.reference,
-    component: defineAsyncComponent({
+    component: markRaw(defineAsyncComponent({
       loader: () =>
         import(
           /* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.render}.vue`
@@ -221,7 +224,7 @@ const availableBlocks = computed(() => {
           fail();
         }
       },
-    }),
+    })),
     options: block.options,
     defaultProps: block.data,
     icon: "fas fa-cube",
@@ -238,13 +241,15 @@ const addBlock = (block, containerId, index) => {
     id: block.id || Date.now().toString(),
   };
 
-  // If the index is beyond the current blocks, add it to the end
   if (index >= container.blocks.length) {
     index = container.blocks.length - 1;
   }
 
-  // Replace the placeholder at the specified index with the new block
-  container.blocks[index] = newBlock;
+  container.blocks = [
+    ...container.blocks.slice(0, index),
+    newBlock,
+    ...container.blocks.slice(index + 1)
+  ];
 };
 
 const selectBlock = (id) => {
@@ -320,9 +325,6 @@ const getBlockComponent = (block) => {
   return foundBlock ? foundBlock.component : null;
 };
 
-const isMobilePreview = ref(false);
-const isFullScreen = ref(false);
-
 const toggleMobilePreview = () => {
   isMobilePreview.value = !isMobilePreview.value;
 };
@@ -389,10 +391,71 @@ const getBlockWrapperClass = (containerType, containerAttributes) => {
   }
 };
 
-const { isDragging, draggedItem, dragStart, dragEnd, handleDrop } = useDragAndDrop(
-  containers,
+const moveBlock = (blockId, targetContainerId, targetIndex) => {
+  let sourceContainer, sourceIndex, blockToMove;
+
+  for (const container of containers.value) {
+    sourceIndex = container.blocks.findIndex(b => b.id === blockId);
+    if (sourceIndex !== -1) {
+      sourceContainer = container;
+      blockToMove = container.blocks[sourceIndex];
+      break;
+    }
+  }
+
+  if (!sourceContainer || !blockToMove) return;
+
+  // Remove the block from the source container
+  sourceContainer.blocks.splice(sourceIndex, 1);
+
+  // Add the block to the target container
+  const targetContainer = containers.value.find(c => c.id === targetContainerId);
+  if (targetContainer) {
+    if (targetIndex === undefined) {
+      targetContainer.blocks.push(blockToMove);
+    } else {
+      targetContainer.blocks.splice(targetIndex, 0, blockToMove);
+    }
+  }
+
+  // Ensure all containers have the correct number of blocks/placeholders
+  containers.value.forEach(container => {
+    const blocksPerRow = getContainerBlocksPerRow(container.type);
+    while (container.blocks.length < blocksPerRow) {
+      container.blocks.push(createPlaceholder(container.blocks.length));
+    }
+    while (container.blocks.length > blocksPerRow) {
+      const lastBlock = container.blocks.pop();
+      if (!lastBlock.isPlaceholder) {
+        // Find a container with available space
+        const availableContainer = containers.value.find(c => c.blocks.length < getContainerBlocksPerRow(c.type));
+        if (availableContainer) {
+          availableContainer.blocks.push(lastBlock);
+        }
+      }
+    }
+  });
+};
+
+const createPlaceholder = (index) => ({
+  isPlaceholder: true,
+  id: `placeholder-${Date.now()}-${index}`,
+  placeholderId: `placeholder-${Date.now()}-${index}`,
+  index
+});
+
+const { isDragging, draggedItem, dragStart, dragEnd, handleDrop: useDragAndDropHandleDrop } = useDragAndDrop(
+  reactive({ containers }),
   addContainer,
-  addBlock
+  addBlock,
+  moveBlock
 );
+
+const handleDrop = (event, containerId, index) => {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  useDragAndDropHandleDrop(event, containerId, index);
+};
 </script>
 

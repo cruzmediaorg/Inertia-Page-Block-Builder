@@ -17,7 +17,7 @@ export default function useContainerAttributes() {
     flexDirectionDesktop: 'row',
     flexDirectionMobile: 'column',
   };
-
+  
   const createAttributes = (initialAttributes = {}) => {
     return reactive({
       ...defaultAttributes,
