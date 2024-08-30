@@ -44,8 +44,23 @@
             @end="dragEnd"
           >
           <template #item="{ element: container }">
-              <div class="container border border-dashed border-gray-300 relative" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id">
+              <div class="container border border-dashed border-gray-300 relative" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id" :style="{
+                backgroundColor: container.attributes.backgroundColor,
+                padding: container.attributes.padding,
+                margin: container.attributes.margin,
+                borderRadius: container.attributes.borderRadius,
+                display: container.attributes.hideOnMobile && isMobilePreview ? 'none' : 'block',
+              }" >           
                 <div class="flex flex-wrap -mx-2">
+                   <!-- Add this button for container selection -->
+                   <button 
+                  @click.stop="selectContainer(container.id)"
+                  class="absolute top-2 left-2 z-50 bg-white p-1 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-200"
+                >
+                  <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                  </svg>
+                </button>
                   <draggable
                     :list="container.blocks"
                     :item-key="(block) => block.id || block.placeholderId"
@@ -110,6 +125,7 @@
         <Sidebar
           :containers="containers"
           :selected-block="selectedBlockData"
+          :selected-container="selectedContainer"
           :is-editing="isEditing"
           :container-types="containerTypes"
           :available-blocks="availableBlocks"
@@ -118,6 +134,7 @@
           @update-block-props="updateBlockProps"
           @finish-editing="finishEditing"
           @save-blocks="saveBlocks"
+          @update-container-attributes="updateContainerAttributes"
         />
       </div>
     </div>
@@ -149,12 +166,22 @@ const props = defineProps({
 
 const emit = defineEmits(['save']);
 
-const containers = ref(props.data);
+const containers = ref(props.data.map(container => ({
+  ...container,
+  attributes: {
+    backgroundColor: '#ffffff',
+    padding: '0px',
+    margin: '0px',
+    borderRadius: '0px',
+    hideOnMobile: false,
+  },
+})));
 const selectedBlock = ref(null);
 const selectedBlockData = ref(null);
 const isEditing = ref(false);
 const isDragging = ref(false);
 const draggedItem = ref(null);
+const selectedContainer = ref(null);
 
 const containerTypes = [
   { type: 'full', name: 'Full Width (1 block per row)', blocksPerRow: 1 },
@@ -318,6 +345,13 @@ const addContainer = (type, position = containers.value.length) => {
       placeholderId: `placeholder-${Date.now()}-${index}`,
       index
     })),
+    attributes: {
+      backgroundColor: '#ffffff',
+      padding: '0px',
+      margin: '0px',
+      borderRadius: '0px',
+      hideOnMobile: false,
+    },
   };
   containers.value.splice(position, 0, newContainer);
 };
@@ -501,6 +535,19 @@ const saveBlocks = () => {
 const getContainerBlocksPerRow = (type) => {
   const containerConfig = containerTypes.find(ct => ct.type === type);
   return containerConfig ? containerConfig.blocksPerRow : 1;
+};
+
+const updateContainerAttributes = (containerId, newAttributes) => {
+  const container = containers.value.find(c => c.id === containerId);
+  if (container) {
+    container.attributes = { ...newAttributes };
+  }
+};
+
+const selectContainer = (containerId) => {
+  selectedContainer.value = containers.value.find(c => c.id === containerId);
+  selectedBlock.value = null;
+  isEditing.value = false;
 };
 </script>
 
