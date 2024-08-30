@@ -69,6 +69,9 @@
                 </button>
                 <div 
                   class="flex flex-wrap"
+                  :style="{
+                    gap: container.attributes.blockGap,
+                  }"
                 >
                   <draggable
                     :list="container.blocks"
@@ -77,15 +80,6 @@
                     group="blocks"
                     @start="dragStart"
                     @end="dragEnd"
-                    :style="{
-                      gap: container.attributes.blockGap,
-                    }"
-                    :class="{
-                      'flex-col': isMobilePreview && container.attributes.flexDirectionMobile === 'column',
-                      'flex-row': isMobilePreview && container.attributes.flexDirectionMobile === 'row',
-                      'flex-row': !isMobilePreview && container.attributes.flexDirectionDesktop === 'row',
-                      'flex-col': !isMobilePreview && container.attributes.flexDirectionDesktop === 'column',
-                    }"
                     class="flex w-full">
                     <template #item="{ element: block, index }">
                       <div :data-block-id="block.id" :class="[getBlockWrapperClass(container.type, container.attributes), 'flex-grow']">
@@ -170,8 +164,10 @@ import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
 import Sidebar from "./Sidebar.vue";
-import useContainerAttributes from "../composables/useContainerAttributes";
+import useContainerManagement from "../composables/useContainerManagement";
+import useDragAndDrop from "../composables/useDragAndDrop";
 import "../../css/style.css";
+import "./PageBuilder.css";
 
 const props = defineProps({
   registeredBlocks: {
@@ -187,25 +183,22 @@ const props = defineProps({
 
 const emit = defineEmits(['save']);
 
-const { createAttributes } = useContainerAttributes();
+const {
+  containers,
+  selectedContainer,
+  addContainer,
+  updateContainerAttributes,
+  selectContainer,
+  deselectContainer,
+  addNewRow,
+  hasPlaceholders,
+  getContainerBlocksPerRow,
+  containerTypes,
+} = useContainerManagement(props.data);
 
-const containers = ref(props.data.map(container => ({
-  ...container,
-  attributes: createAttributes(container.attributes),
-})));
 const selectedBlock = ref(null);
 const selectedBlockData = ref(null);
 const isEditing = ref(false);
-const isDragging = ref(false);
-const draggedItem = ref(null);
-const selectedContainer = ref(null);
-
-const containerTypes = [
-  { type: 'full', name: 'Full Width (1 block per row)', blocksPerRow: 1 },
-  { type: 'half', name: '1/2 - 1/2 (2 blocks per row)', blocksPerRow: 2 },
-  { type: 'third', name: '1/3 - 1/3 - 1/3 (3 blocks per row)', blocksPerRow: 3 },
-  { type: 'quarter', name: '1/4 - 1/4 - 1/4 - 1/4 (4 blocks per row)', blocksPerRow: 4 },
-];
 
 const availableBlocks = computed(() => {
   if (!Array.isArray(props.registeredBlocks)) {
@@ -235,139 +228,6 @@ const availableBlocks = computed(() => {
   }));
 });
 
-const dragStart = (evt) => {
-  isDragging.value = true;
-  if (evt.item.dataset.blockId) {
-    draggedItem.value = { type: 'block', id: evt.item.dataset.blockId };
-  } else if (evt.item.dataset.containerId) {
-    draggedItem.value = { type: 'container', id: evt.item.dataset.containerId };
-  }
-};
-
-const dragEnd = () => {
-  isDragging.value = false;
-  draggedItem.value = null;
-};
-
-const handleDrop = (event, containerId, index) => {
-
-  event.preventDefault();
-
-  if (draggedItem.value && draggedItem.value.type === 'block') {
-    const sourceContainer = containers.value.find(c => c.blocks.some(b => b.id === draggedItem.value.id));
-    const targetContainer = containers.value.find(c => c.id === containerId);
-
-    if (sourceContainer && targetContainer) {
-      const blockToMove = sourceContainer.blocks.find(b => b.id === draggedItem.value.id);
-      const sourceIndex = sourceContainer.blocks.findIndex(b => b.id === draggedItem.value.id);
-
-      sourceContainer.blocks[sourceIndex] = {
-        isPlaceholder: true,
-        id: `placeholder-${Date.now()}-${sourceIndex}`,
-        placeholderId: `placeholder-${Date.now()}-${sourceIndex}`,
-        index: sourceIndex
-      };
-
-      addBlock(blockToMove, targetContainer.id, index);
-
-      draggedItem.value = null;
-      return;
-    }
-  }
-
-  let data;
-  try {
-    data = JSON.parse(event.dataTransfer.getData('text/plain'));
-  } catch (error) {
-    console.error('Failed to parse drag data', error);
-    return;
-  }
-
-  if (data.type === 'container' && !containerId) {
-    const dropIndex = getDropIndex(event);
-    addContainer(data.containerType.type, dropIndex);
-  } else if (data.type === 'block') {
-    let targetContainerId = containerId;
-    if (!targetContainerId) {
-      targetContainerId = getNearestContainerId(event);
-      if (!targetContainerId) {
-        addContainer('full');
-        targetContainerId = containers.value[0].id;
-      }
-    }
-    const container = containers.value.find(c => c.id === targetContainerId);
-    if (container) {
-      addBlock(data.block, targetContainerId, index);
-    }
-  }
-
-  event.dataTransfer.dropEffect = 'move';
-  event.dataTransfer.clearData();
-};
-
-const getDropIndex = (event) => {
-  const containerElements = document.querySelectorAll('.container');
-  for (let i = 0; i < containerElements.length; i++) {
-    const rect = containerElements[i].getBoundingClientRect();
-    if (event.clientY < rect.bottom) {
-      return i;
-    }
-  }
-  return containers.value.length;
-};
-
-const getDropIndexInContainer = (event, container) => {
-  const containerElement = document.querySelector(`[data-container-id="${container.id}"]`);
-  if (!containerElement) return container.blocks.length;
-
-  const blockElements = containerElement.querySelectorAll('[data-block-id]');
-  const containerRect = containerElement.getBoundingClientRect();
-  const relativeY = event.clientY - containerRect.top;
-
-  for (let i = 0; i < blockElements.length; i++) {
-    const blockRect = blockElements[i].getBoundingClientRect();
-    const blockMiddle = blockRect.top + blockRect.height / 2 - containerRect.top;
-    if (relativeY < blockMiddle) {
-      return i;
-    }
-  }
-  return container.blocks.length;
-};
-
-const getNearestContainerId = (event) => {
-  const containerElements = document.querySelectorAll('.container');
-  let nearestContainer = null;
-  let minDistance = Infinity;
-
-  containerElements.forEach((container) => {
-    const rect = container.getBoundingClientRect();
-    const distance = Math.abs(event.clientY - (rect.top + rect.height / 2));
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearestContainer = container;
-    }
-  });
-
-  return nearestContainer ? nearestContainer.getAttribute('data-container-id') : null;
-};
-
-const addContainer = (type, position = containers.value.length) => {
-  const blocksPerRow = getContainerBlocksPerRow(type);
-  const newContainer = {
-    id: Date.now().toString(),
-    type,
-    blocks: Array(blocksPerRow).fill().map((_, index) => ({
-      isPlaceholder: true,
-      id: `placeholder-${Date.now()}-${index}`,
-      placeholderId: `placeholder-${Date.now()}-${index}`,
-      index
-    })),
-    attributes: createAttributes(),
-  };
-  containers.value.splice(position, 0, newContainer);
-  selectContainer(newContainer.id);
-};
-
 const addBlock = (block, containerId, index) => {
   const container = containers.value.find(c => c.id === containerId);
   if (!container) return;
@@ -378,7 +238,6 @@ const addBlock = (block, containerId, index) => {
     id: block.id || Date.now().toString(),
   };
 
- 
   // If the index is beyond the current blocks, add it to the end
   if (index >= container.blocks.length) {
     index = container.blocks.length - 1;
@@ -386,21 +245,6 @@ const addBlock = (block, containerId, index) => {
 
   // Replace the placeholder at the specified index with the new block
   container.blocks[index] = newBlock;
-};
-
-const hasPlaceholders = (container) => {
-  return container.blocks.some(block => block.isPlaceholder);
-};
-
-const addNewRow = (container) => {
-  const blocksPerRow = getContainerBlocksPerRow(container.type);
-  const newRowPlaceholders = Array(blocksPerRow).fill().map((_, index) => ({
-    isPlaceholder: true,
-    id: `placeholder-${Date.now()}-${container.blocks.length + index}`,
-    placeholderId: `placeholder-${Date.now()}-${container.blocks.length + index}`,
-    index: container.blocks.length + index
-  }));
-  container.blocks.push(...newRowPlaceholders);
 };
 
 const selectBlock = (id) => {
@@ -500,11 +344,6 @@ const containerClass = computed(() => ({
   "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
 
-const getContainerName = (type) => {
-  const containerConfig = containerTypes.find(ct => ct.type === type);
-  return containerConfig ? containerConfig.name : 'Container';
-};
-
 const getSelectedBlock = () => {
   for (const container of containers.value) {
     const block = container.blocks.find(b => b.id === selectedBlock.value);
@@ -531,30 +370,8 @@ const saveBlocks = () => {
   emit('save', JSON.stringify(blocksData));
 };
 
-const getContainerBlocksPerRow = (type) => {
-  const containerConfig = containerTypes.find(ct => ct.type === type);
-  return containerConfig ? containerConfig.blocksPerRow : 1;
-};
-
-const updateContainerAttributes = (containerId, newAttributes) => {
-  const container = containers.value.find(c => c.id === containerId);
-  if (container) {
-    container.attributes = { ...newAttributes };
-  }
-};
-
-const selectContainer = (containerId) => {
-  selectedContainer.value = containers.value.find(c => c.id === containerId);
-  selectedBlock.value = null;
-  isEditing.value = false;
-};
-
-const deselectContainer = () => {
-  selectedContainer.value = null;
-};
-
 const selectContainerById = (containerId) => {
-  selectedContainer.value = containers.value.find(c => c.id === containerId);
+  selectContainer(containerId);
   selectedBlock.value = null;
   isEditing.value = false;
 };
@@ -562,13 +379,6 @@ const selectContainerById = (containerId) => {
 const getBlockWrapperClass = (containerType, containerAttributes) => {
   const containerConfig = containerTypes.find(ct => ct.type === containerType);
   if (!containerConfig) return 'w-full';
-
-  const isColumn = (isMobilePreview.value && containerAttributes.flexDirectionMobile === 'column') ||
-                   (!isMobilePreview.value && containerAttributes.flexDirectionDesktop === 'column');
-
-  if (isColumn) {
-    return 'w-full';
-  }
 
   switch (containerConfig.blocksPerRow) {
     case 1: return 'w-full';
@@ -578,36 +388,11 @@ const getBlockWrapperClass = (containerType, containerAttributes) => {
     default: return 'w-full';
   }
 };
+
+const { isDragging, draggedItem, dragStart, dragEnd, handleDrop } = useDragAndDrop(
+  containers,
+  addContainer,
+  addBlock
+);
 </script>
-
-<style scoped>
-.container {
-  transition: all 0.3s ease;
-}
-.container:hover {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-}
-.block-drag-handle,
-.container-drag-handle {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.container:hover .container-drag-handle,
-.group:hover .block-drag-handle {
-  opacity: 1;
-}
-
-
-.block-placeholder {
-  transition: all 0.3s ease;
-}
-
-.block-placeholder:hover {
-  background-color: rgba(59, 130, 246, 0.1);
-}
-
-.flex-grow {
-  flex-grow: 1;
-}
-</style>
 

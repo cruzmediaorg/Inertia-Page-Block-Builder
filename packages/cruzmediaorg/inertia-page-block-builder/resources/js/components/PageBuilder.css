@@ -1,0 +1,30 @@
+.container {
+  transition: all 0.3s ease;
+}
+
+.container:hover {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.block-drag-handle,
+.container-drag-handle {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.container:hover .container-drag-handle,
+.group:hover .block-drag-handle {
+  opacity: 1;
+}
+
+.block-placeholder {
+  transition: all 0.3s ease;
+}
+
+.block-placeholder:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
