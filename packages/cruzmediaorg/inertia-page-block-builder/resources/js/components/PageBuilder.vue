@@ -46,8 +46,14 @@
           <template #item="{ element: container }">
               <div class="container border border-dashed border-gray-300 relative" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id" :style="{
                 backgroundColor: container.attributes.backgroundColor,
-                padding: container.attributes.padding,
-                margin: container.attributes.margin,
+                paddingTop: container.attributes.paddingTop,
+                paddingRight: container.attributes.paddingRight,
+                paddingBottom: container.attributes.paddingBottom,
+                paddingLeft: container.attributes.paddingLeft,
+                marginTop: container.attributes.marginTop,
+                marginRight: container.attributes.marginRight,
+                marginBottom: container.attributes.marginBottom,
+                marginLeft: container.attributes.marginLeft,
                 borderRadius: container.attributes.borderRadius,
                 display: container.attributes.hideOnMobile && isMobilePreview ? 'none' : 'block',
               }" >           
@@ -135,6 +141,9 @@
           @finish-editing="finishEditing"
           @save-blocks="saveBlocks"
           @update-container-attributes="updateContainerAttributes"
+          @deselect-container="deselectContainer"
+          @select-block="selectBlock"
+          @select-container="selectContainerById"
         />
       </div>
     </div>
@@ -170,8 +179,14 @@ const containers = ref(props.data.map(container => ({
   ...container,
   attributes: {
     backgroundColor: '#ffffff',
-    padding: '0px',
-    margin: '0px',
+    paddingTop: '0px',
+    paddingRight: '0px',
+    paddingBottom: '0px',
+    paddingLeft: '0px',
+    marginTop: '0px',
+    marginRight: '0px',
+    marginBottom: '0px',
+    marginLeft: '0px',
     borderRadius: '0px',
     hideOnMobile: false,
   },
@@ -347,13 +362,20 @@ const addContainer = (type, position = containers.value.length) => {
     })),
     attributes: {
       backgroundColor: '#ffffff',
-      padding: '0px',
-      margin: '0px',
+      paddingTop: '0px',
+      paddingRight: '0px',
+      paddingBottom: '0px',
+      paddingLeft: '0px',
+      marginTop: '0px',
+      marginRight: '0px',
+      marginBottom: '0px',
+      marginLeft: '0px',
       borderRadius: '0px',
       hideOnMobile: false,
     },
   };
   containers.value.splice(position, 0, newContainer);
+  selectContainer(newContainer.id);
 };
 
 const addBlock = (block, containerId, index) => {
@@ -402,6 +424,7 @@ const selectBlock = (id) => {
       options: block.options
     };
   }
+  selectedContainer.value = null;
   isEditing.value = true;
 };
 
@@ -545,6 +568,16 @@ const updateContainerAttributes = (containerId, newAttributes) => {
 };
 
 const selectContainer = (containerId) => {
+  selectedContainer.value = containers.value.find(c => c.id === containerId);
+  selectedBlock.value = null;
+  isEditing.value = false;
+};
+
+const deselectContainer = () => {
+  selectedContainer.value = null;
+};
+
+const selectContainerById = (containerId) => {
   selectedContainer.value = containers.value.find(c => c.id === containerId);
   selectedBlock.value = null;
   isEditing.value = false;
