@@ -3,8 +3,8 @@
     class="flex flex-col h-screen bg-gray-100"
     :class="{ 'mobile-preview': isMobilePreview }"
   >
-    <div class="bg-white shadow-sm" @click="selectContainer(null)">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
         <div class="flex justify-between items-center py-4">
           <div></div>
           <div class="hidden md:flex space-x-4">
@@ -29,12 +29,13 @@
         </div>
       </div>
     </div>
-    <div class="flex-1 overflow-hidden border-t">
-      <div class="flex flex-col md:flex-row h-full">
+    <div class="flex-1 overflow-hidden border-t" >
+      <div class="flex flex-col md:flex-row h-full ">
         <div
           :class="[containerClass, 'w-full md:w-[calc(100%-320px)] overflow-y-auto p-4']"
           @dragover.prevent
           @drop="handleDrop"
+          @click="selectContainer(null)"
         >
           <draggable
             v-model="containers"
@@ -44,22 +45,21 @@
             @end="dragEnd"
           >
           <template #item="{ element: container }">
-              <div class="container border border-dashed border-gray-300 relative" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id" :style="{
-                backgroundColor: container.attributes.backgroundColor,
-                paddingTop: container.attributes.paddingTop,
-                paddingRight: container.attributes.paddingRight,
-                paddingBottom: container.attributes.paddingBottom,
-                paddingLeft: container.attributes.paddingLeft,
-                marginTop: container.attributes.marginTop,
-                marginRight: container.attributes.marginRight,
-                marginBottom: container.attributes.marginBottom,
-                marginLeft: container.attributes.marginLeft,
-                borderRadius: container.attributes.borderRadius,
-                display: container.attributes.hideOnMobile && isMobilePreview ? 'none' : 'block',
-              }" >           
-                <div class="flex flex-wrap -mx-2">
-                   <!-- Add this button for container selection -->
-                   <button 
+              <div 
+                class="container border border-dashed border-gray-300 relative" 
+                @dragover.prevent 
+                @drop.stop="handleDrop($event, container.id)" 
+                :data-container-id="container.id"
+                :style="{
+                  backgroundColor: container.attributes.backgroundColor,
+                  padding: `${container.attributes.paddingTop} ${container.attributes.paddingRight} ${container.attributes.paddingBottom} ${container.attributes.paddingLeft}`,
+                  margin: `${container.attributes.marginTop} ${container.attributes.marginRight} ${container.attributes.marginBottom} ${container.attributes.marginLeft}`,
+                  borderRadius: container.attributes.borderRadius,
+                  display: container.attributes.hideOnMobile && isMobilePreview ? 'none' : 'block',
+                }"
+              >
+                <!-- Add this button for container selection -->
+                <button 
                   @click.stop="selectContainer(container.id)"
                   class="absolute top-2 left-2 z-50 bg-white p-1 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-200"
                 >
@@ -67,20 +67,31 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                   </svg>
                 </button>
+                <div 
+                  class="flex flex-wrap"
+                >
                   <draggable
                     :list="container.blocks"
                     :item-key="(block) => block.id || block.placeholderId"
                     handle=".block-drag-handle"
                     group="blocks"
-                    class="flex flex-wrap w-full"
                     @start="dragStart"
                     @end="dragEnd"
-                  >
+                    :style="{
+                      gap: container.attributes.blockGap,
+                    }"
+                    :class="{
+                      'flex-col': isMobilePreview && container.attributes.flexDirectionMobile === 'column',
+                      'flex-row': isMobilePreview && container.attributes.flexDirectionMobile === 'row',
+                      'flex-row': !isMobilePreview && container.attributes.flexDirectionDesktop === 'row',
+                      'flex-col': !isMobilePreview && container.attributes.flexDirectionDesktop === 'column',
+                    }"
+                    class="flex w-full">
                     <template #item="{ element: block, index }">
-                      <div :class="getBlockWrapperClass(container.type)" :data-block-id="block.id">
+                      <div :data-block-id="block.id" :class="[getBlockWrapperClass(container.type, container.attributes), 'flex-grow']">
                         <template v-if="block.isPlaceholder">
                           <div 
-                            class="block-placeholder min-h-24 h-full border-2 border-dashed border-gray-300  flex items-center justify-center"
+                            class="block-placeholder min-h-24 h-full border-2 border-dashed border-gray-300 flex items-center justify-center"
                             @dragover.prevent
                             @drop.stop="handleDrop($event, container.id, index)"
                           >
@@ -489,20 +500,6 @@ const containerClass = computed(() => ({
   "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
 
-const getBlockWrapperClass = (containerType) => {
-  const containerConfig = containerTypes.find(ct => ct.type === containerType);
-  if (!containerConfig) return 'w-full p-2 ';
-
-  const widthClass = {
-    1: 'w-full',
-    2: 'w-1/2',
-    3: 'w-1/3',
-    4: 'w-1/4',
-  }[containerConfig.blocksPerRow] || 'w-full';
-
-  return `${widthClass}`;
-};
-
 const getContainerName = (type) => {
   const containerConfig = containerTypes.find(ct => ct.type === type);
   return containerConfig ? containerConfig.name : 'Container';
@@ -561,6 +558,26 @@ const selectContainerById = (containerId) => {
   selectedBlock.value = null;
   isEditing.value = false;
 };
+
+const getBlockWrapperClass = (containerType, containerAttributes) => {
+  const containerConfig = containerTypes.find(ct => ct.type === containerType);
+  if (!containerConfig) return 'w-full';
+
+  const isColumn = (isMobilePreview.value && containerAttributes.flexDirectionMobile === 'column') ||
+                   (!isMobilePreview.value && containerAttributes.flexDirectionDesktop === 'column');
+
+  if (isColumn) {
+    return 'w-full';
+  }
+
+  switch (containerConfig.blocksPerRow) {
+    case 1: return 'w-full';
+    case 2: return 'w-1/2';
+    case 3: return 'w-1/3';
+    case 4: return 'w-1/4';
+    default: return 'w-full';
+  }
+};
 </script>
 
 <style scoped>
@@ -579,11 +596,7 @@ const selectContainerById = (containerId) => {
 .group:hover .block-drag-handle {
   opacity: 1;
 }
-.container .flex-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  min-height: 100px; 
-}
+
 
 .block-placeholder {
   transition: all 0.3s ease;
@@ -591,6 +604,10 @@ const selectContainerById = (containerId) => {
 
 .block-placeholder:hover {
   background-color: rgba(59, 130, 246, 0.1);
+}
+
+.flex-grow {
+  flex-grow: 1;
 }
 </style>
 

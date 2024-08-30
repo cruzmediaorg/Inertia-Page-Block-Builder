@@ -14,6 +14,8 @@ export default function useContainerAttributes() {
     borderRadius: '0px',
     hideOnMobile: false,
     blockGap: '0px',
+    flexDirectionDesktop: 'row',
+    flexDirectionMobile: 'column',
   };
 
   const createAttributes = (initialAttributes = {}) => {

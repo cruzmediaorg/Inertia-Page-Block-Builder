@@ -91,6 +91,23 @@
                 :unit="'px'"
               />
             </div>
+            <!-- Flex Direction -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Flex Direction</label>
+              <select v-model="selectedContainer.attributes.flexDirectionDesktop" @change="updateContainerAttributes" class="w-full p-2 border rounded-md">
+                <option value="row">Row</option>
+                <option value="column">Column</option>
+              </select>
+            </div>
+
+            <!-- Flex Direction Mobile -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Flex Direction Mobile</label>
+              <select v-model="selectedContainer.attributes.flexDirectionMobile" @change="updateContainerAttributes" class="w-full p-2 border rounded-md">
+                <option value="column">Column</option>
+                <option value="row">Row</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
