@@ -44,10 +44,7 @@
             @end="dragEnd"
           >
             <template #item="{ element: container }">
-              <div class="container mb-4 border border-dashed border-gray-300 rounded" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id">
-                <div class="container-drag-handle cursor-move mb-2 p-1 rounded fixed z-[999] bg-white">
-                  <span class="text-sm text-gray-600">{{ getContainerName(container.type) }}</span>
-                </div>
+              <div class="container border border-dashed border-gray-300 relative" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id">
                 <div class="flex flex-wrap -mx-2">
                   <draggable
                     :list="container.blocks"
@@ -62,7 +59,7 @@
                       <div :class="getBlockWrapperClass(container.type)" :data-block-id="block.id">
                         <template v-if="block.isPlaceholder">
                           <div 
-                            class="block-placeholder h-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center"
+                            class="block-placeholder min-h-24 h-full border-2 border-dashed border-gray-300  flex items-center justify-center"
                             @dragover.prevent
                             @drop.stop="handleDrop($event, container.id, index)"
                           >
@@ -71,7 +68,7 @@
                         </template>
                         <template v-else>
                           <div
-                            class="group relative h-full bg-white border border-gray-200 rounded-md shadow-sm p-2"
+                            class="group relative h-full"
                             :class="{
                               'ring-2 ring-blue-500': selectedBlock === block.id,
                             }"
@@ -94,6 +91,15 @@
                       </div>
                     </template>
                   </draggable>
+                </div>
+                <div v-if="!hasPlaceholders(container)" 
+                  :class="{ 'absolute -bottom-6 left-0 right-0 flex justify-center z-[10]': true, 'hidden': isMobilePreview }"
+                 class="container-drag-handle cursor-move absolute -bottom-6 left-0 right-0 flex justify-center z-[10]">
+                  <button @click="addNewRow(container)" class=" bg-white text-gray-500  rounded-b-md py-0 px-12 hover:bg-gray-100 transition-colors border-black">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
             </template>
@@ -121,6 +127,9 @@
       </div>
     </div>
   </div>
+  <pre>
+    {{ containers }}
+  </pre>
 </template>
 
 <script setup>
@@ -160,7 +169,6 @@ const containerTypes = [
 
 const availableBlocks = computed(() => {
   if (!Array.isArray(props.registeredBlocks)) {
-    console.error("registeredBlocks is not an array:", props.registeredBlocks);
     return [];
   }
 
@@ -177,7 +185,6 @@ const availableBlocks = computed(() => {
         if (attempts <= 3) {
           retry();
         } else {
-          console.error(`Failed to load component: ${block.render}`, error);
           fail();
         }
       },
@@ -203,7 +210,6 @@ const dragEnd = () => {
 };
 
 const handleDrop = (event, containerId, index) => {
-  console.log('Drop event triggered', { containerId, index });
   
   event.preventDefault();
 
@@ -224,7 +230,7 @@ const handleDrop = (event, containerId, index) => {
         index: sourceIndex
       };
       
-      // Add the block to the target container at the specific index
+      // Add the block to the target container
       addBlock(blockToMove, targetContainer.id, index);
 
       draggedItem.value = null;
@@ -232,7 +238,7 @@ const handleDrop = (event, containerId, index) => {
     }
   }
 
-  // If not dragging an existing block, proceed with the original logic
+  // If not dragging an existing block, proceed with the original logic for new blocks
   let data;
   try {
     data = JSON.parse(event.dataTransfer.getData('text/plain'));
@@ -241,7 +247,6 @@ const handleDrop = (event, containerId, index) => {
     return;
   }
 
-  console.log('Parsed drop data', data);
 
   if (data.type === 'container' && !containerId) {
     const dropIndex = getDropIndex(event);
@@ -327,7 +332,6 @@ const addContainer = (type, position = containers.value.length) => {
 };
 
 const addBlock = (block, containerId, index) => {
-  console.log('Adding block', { block, containerId, index });
 
   const container = containers.value.find(c => c.id === containerId);
   if (!container) return;
@@ -338,10 +342,28 @@ const addBlock = (block, containerId, index) => {
     id: block.id || Date.now().toString(),
   };
 
+  // If the index is beyond the current blocks, add it to the end
+  if (index >= container.blocks.length) {
+    index = container.blocks.length - 1;
+  }
+
   // Replace the placeholder at the specified index with the new block
   container.blocks[index] = newBlock;
+};
 
-  console.log('Block added to container', { containerId, blockId: newBlock.id, index });
+const hasPlaceholders = (container) => {
+  return container.blocks.some(block => block.isPlaceholder);
+};
+
+const addNewRow = (container) => {
+  const blocksPerRow = getContainerBlocksPerRow(container.type);
+  const newRowPlaceholders = Array(blocksPerRow).fill().map((_, index) => ({
+    isPlaceholder: true,
+    id: `placeholder-${Date.now()}-${container.blocks.length + index}`,
+    placeholderId: `placeholder-${Date.now()}-${container.blocks.length + index}`,
+    index: container.blocks.length + index
+  }));
+  container.blocks.push(...newRowPlaceholders);
 };
 
 const selectBlock = (id) => {
@@ -438,7 +460,7 @@ const getBlockWrapperClass = (containerType) => {
     4: 'w-1/4',
   }[containerConfig.blocksPerRow] || 'w-full';
 
-  return `${widthClass} p-2`;
+  return `${widthClass}`;
 };
 
 const getContainerName = (type) => {
@@ -497,6 +519,7 @@ const getContainerBlocksPerRow = (type) => {
 .container .flex-wrap {
   display: flex;
   flex-wrap: wrap;
+  min-height: 100px; 
 }
 
 .block-placeholder {
