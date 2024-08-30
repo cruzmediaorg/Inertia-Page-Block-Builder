@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import DynamicOptions from './DynamicOptions.vue';
 
 const props = defineProps({
@@ -76,7 +76,7 @@ const props = defineProps({
     required: true,
   },
   selectedBlock: {
-    type: String,
+    type: Object,
     default: null,
   },
   isEditing: {
@@ -98,6 +98,14 @@ const emit = defineEmits(['add-container', 'add-block', 'update-block-props', 'f
 const searchQuery = ref('');
 const selectedBlockProps = ref({});
 
+watch(() => props.selectedBlock, (newValue) => {
+  if (newValue) {
+    selectedBlockProps.value = { ...newValue.props };
+  } else {
+    selectedBlockProps.value = {};
+  }
+}, { immediate: true, deep: true });
+
 const filteredBlocks = computed(() => {
   return props.availableBlocks.filter((block) =>
     block.name.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -105,31 +113,11 @@ const filteredBlocks = computed(() => {
 });
 
 const getSelectedBlockName = () => {
-  const block = getSelectedBlock();
-  return block ? block.name : '';
+  return props.selectedBlock ? props.selectedBlock.name : '';
 };
 
 const getSelectedBlockOptions = () => {
-  const block = getSelectedBlock();
-  return block ? block.options : [];
-};
-
-const getSelectedBlock = () => {
-  for (const container of props.containers) {
-    const block = container.blocks.find(b => b.id === props.selectedBlock);
-    if (block) {
-      return block;
-    }
-  }
-  return null;
-};
-
-const addContainer = (type) => {
-  emit('add-container', type);
-};
-
-const addBlock = (block) => {
-  emit('add-block', block);
+  return props.selectedBlock ? props.selectedBlock.options : [];
 };
 
 const updateBlockProps = (newProps) => {

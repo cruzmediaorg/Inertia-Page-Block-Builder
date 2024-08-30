@@ -51,7 +51,6 @@ const getComponentType = (option) => {
     return componentCache.get(option.componentPath);
   }
 
-  console.log('option', option);
   const componentPromise = defineAsyncComponent(() => {
     // Try to load from the package directory first
     return import(/* @vite-ignore */ option.componentPath)

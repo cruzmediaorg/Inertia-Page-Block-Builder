@@ -43,7 +43,7 @@
             @start="dragStart"
             @end="dragEnd"
           >
-            <template #item="{ element: container }">
+          <template #item="{ element: container }">
               <div class="container border border-dashed border-gray-300 relative" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id">
                 <div class="flex flex-wrap -mx-2">
                   <draggable
@@ -74,15 +74,10 @@
                             }"
                             @click="selectBlock(block.id)"
                           >
-                            <div class="block-drag-handle absolute top-0 left-0 cursor-move p-1 bg-gray-100 rounded-tl">
-                              <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                              </svg>
-                            </div>
                             <component :is="getBlockComponent(block)" v-bind="block.props" />
                             <BlockActions
                               class="block-actions"
-                              @edit="editBlock(block.id)"
+                              @edit="selectBlock(block.id)"
                               @delete="deleteBlock(container.id, block.id)"
                               @duplicate="duplicateBlock(container.id, block.id)"
                             />
@@ -114,7 +109,7 @@
         </div>
         <Sidebar
           :containers="containers"
-          :selected-block="selectedBlock"
+          :selected-block="selectedBlockData"
           :is-editing="isEditing"
           :container-types="containerTypes"
           :available-blocks="availableBlocks"
@@ -156,6 +151,7 @@ const emit = defineEmits(['save']);
 
 const containers = ref(props.data);
 const selectedBlock = ref(null);
+const selectedBlockData = ref(null);
 const isEditing = ref(false);
 const isDragging = ref(false);
 const draggedItem = ref(null);
@@ -210,10 +206,9 @@ const dragEnd = () => {
 };
 
 const handleDrop = (event, containerId, index) => {
-  
+
   event.preventDefault();
 
-  // Check if we're dragging an existing block
   if (draggedItem.value && draggedItem.value.type === 'block') {
     const sourceContainer = containers.value.find(c => c.blocks.some(b => b.id === draggedItem.value.id));
     const targetContainer = containers.value.find(c => c.id === containerId);
@@ -221,16 +216,14 @@ const handleDrop = (event, containerId, index) => {
     if (sourceContainer && targetContainer) {
       const blockToMove = sourceContainer.blocks.find(b => b.id === draggedItem.value.id);
       const sourceIndex = sourceContainer.blocks.findIndex(b => b.id === draggedItem.value.id);
-      
-      // Remove the block from the source container and replace with a placeholder
+
       sourceContainer.blocks[sourceIndex] = {
         isPlaceholder: true,
         id: `placeholder-${Date.now()}-${sourceIndex}`,
         placeholderId: `placeholder-${Date.now()}-${sourceIndex}`,
         index: sourceIndex
       };
-      
-      // Add the block to the target container
+
       addBlock(blockToMove, targetContainer.id, index);
 
       draggedItem.value = null;
@@ -238,7 +231,6 @@ const handleDrop = (event, containerId, index) => {
     }
   }
 
-  // If not dragging an existing block, proceed with the original logic for new blocks
   let data;
   try {
     data = JSON.parse(event.dataTransfer.getData('text/plain'));
@@ -246,7 +238,6 @@ const handleDrop = (event, containerId, index) => {
     console.error('Failed to parse drag data', error);
     return;
   }
-
 
   if (data.type === 'container' && !containerId) {
     const dropIndex = getDropIndex(event);
@@ -332,7 +323,6 @@ const addContainer = (type, position = containers.value.length) => {
 };
 
 const addBlock = (block, containerId, index) => {
-
   const container = containers.value.find(c => c.id === containerId);
   if (!container) return;
 
@@ -342,6 +332,7 @@ const addBlock = (block, containerId, index) => {
     id: block.id || Date.now().toString(),
   };
 
+ 
   // If the index is beyond the current blocks, add it to the end
   if (index >= container.blocks.length) {
     index = container.blocks.length - 1;
@@ -368,7 +359,16 @@ const addNewRow = (container) => {
 
 const selectBlock = (id) => {
   selectedBlock.value = id;
-  editBlock(id);
+  const block = getSelectedBlock();
+  if (block) {
+    selectedBlockData.value = {
+      id: block.id,
+      name: block.name,
+      props: block.props,
+      options: block.options
+    };
+  }
+  isEditing.value = true;
 };
 
 const editBlock = (id) => {
@@ -412,6 +412,10 @@ const updateBlockProps = (newProps) => {
     const block = getSelectedBlock();
     if (block) {
       block.props = { ...newProps };
+      selectedBlockData.value = {
+        ...selectedBlockData.value,
+        props: newProps
+      };
     }
   }
 };
