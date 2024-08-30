@@ -13,58 +13,16 @@
               class="bg-white p-2 border rounded-md"
               :class="{ 'text-blue-500': isMobilePreview }"
             >
-              <svg
-                v-if="isMobilePreview"
-                class="w-6 h-6 text-gray-500"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5 4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4Zm12 12V5H7v11h10Zm-5 1a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H12Z"
-                  clip-rule="evenodd"
-                />
+              <svg v-if="isMobilePreview" class="w-6 h-6 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M5 4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4Zm12 12V5H7v11h10Zm-5 1a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H12Z" clip-rule="evenodd" />
               </svg>
-              <svg
-                v-else
-                class="w-6 h-6 text-gray-600"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 15v5m-3 0h6M4 11h16M5 15h14a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1Z"
-                />
+              <svg v-else class="w-6 h-6 text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v5m-3 0h6M4 11h16M5 15h14a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1Z" />
               </svg>
             </button>
             <button @click="toggleFullScreen" class="bg-white p-2 border rounded-md">
-              <svg
-                class="w-6 h-6 text-gray-600"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0-4-5 5M8 20H4m0 0v-4m0 4 5-5m7 5h4m0 0v-4m0 4-5-5"
-                />
+              <svg class="w-6 h-6 text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0-4-5 5M8 20H4m0 0v-4m0 4 5-5m7 5h4m0 0v-4m0 4-5-5" />
               </svg>
             </button>
           </div>
@@ -86,20 +44,23 @@
             @end="dragEnd"
           >
             <template #item="{ element: container }">
-              <div class="container mb-4 p-2 border border-dashed border-gray-300 rounded">
-                <div class="container-drag-handle cursor-move mb-2 p-1 bg-gray-100 rounded">
+              <div class="container mb-4 border border-dashed border-gray-300 rounded" @dragover.prevent @drop.stop="handleDrop($event, container.id)" :data-container-id="container.id">
+                <div class="container-drag-handle cursor-move mb-2 p-1 rounded fixed z-[999] bg-white">
                   <span class="text-sm text-gray-600">{{ getContainerName(container.type) }}</span>
                 </div>
                 <div class="flex flex-wrap -mx-2">
-                  <draggable
-                    v-model="container.blocks"
-                    :item-key="(block) => block.id"
-                    handle=".block-drag-handle"
-                    group="blocks"
-                    class="flex flex-wrap w-full"
-                  >
-                    <template #item="{ element: block }">
-                      <div :class="getBlockWrapperClass(container.type)">
+                  <template v-for="(block, index) in getBlocksWithPlaceholders(container)" :key="block.id || `placeholder-${index}`">
+                    <div :class="getBlockWrapperClass(container.type)" :data-block-id="block.id">
+                      <template v-if="block.isPlaceholder">
+                        <div 
+                          class="block-placeholder h-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center"
+                          @dragover.prevent
+                          @drop.stop="handleDrop($event, container.id, index)"
+                        >
+                          <p class="text-gray-400 text-sm">Drag a block here</p>
+                        </div>
+                      </template>
+                      <template v-else>
                         <div
                           class="group relative h-full bg-white border border-gray-200 rounded-md shadow-sm p-2"
                           :class="{
@@ -120,9 +81,9 @@
                             @duplicate="duplicateBlock(container.id, block.id)"
                           />
                         </div>
-                      </div>
-                    </template>
-                  </draggable>
+                      </template>
+                    </div>
+                  </template>
                 </div>
               </div>
             </template>
@@ -135,83 +96,29 @@
             <p class="text-gray-500 text-center">Drag and drop a container to get started</p>
           </div>
         </div>
-        <div class="w-full h-[90vh] md:w-80 border-t md:border-l bg-white border-gray-200 overflow-y-auto md:absolute md:right-0  relative">
-          <div class="p-6">
-            <div
-              v-if="selectedBlock !== null && isEditing"
-              class="space-y-4 p-4 bg-white rounded-lg divide"
-            >
-              <h3 class="text-lg font-medium text-gray-900 mb-4">
-                Edit {{ getSelectedBlock().name }}
-              </h3>
-              <DynamicOptions
-                v-model="getSelectedBlock().props"
-                :options="getSelectedBlock().options"
-                @update:modelValue="updateBlockProps"
-              />
-              <button
-                @click="finishEditing"
-                class="mt-4 w-full bg-black text-white px-4 py-2 rounded hover:bg-gray-900"
-              >
-                Done
-              </button>
-            </div>
-            <div v-else>
-              <!-- Container types -->
-              <h3 class="text-lg font-medium text-gray-900 mb-4">Containers</h3>
-              <div class="space-y-2 mb-6">
-                <button
-                  v-for="containerType in containerTypes"
-                  :key="containerType.type"
-                  class="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  @click="addContainer(containerType.type)"
-                  draggable="true"
-                  @dragstart="startDragContainer(containerType)"
-                >
-                  {{ containerType.name }}
-                </button>
-              </div>
-              <!-- Block types -->
-              <h3 class="text-lg font-medium text-gray-900 mb-4">Blocks</h3>
-              <div class="mb-4">
-                <input
-                  type="text"
-                  placeholder="Search blocks"
-                  v-model="searchQuery"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div class="space-y-2">
-                <button
-                  v-for="block in filteredBlocks"
-                  :key="block.name"
-                  class="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  @click="addBlock(block)"
-                  @dragstart="startDragBlock(block)"
-                  draggable="true"
-                >
-                  <i :class="[block.icon, 'mr-3 text-gray-400']"></i>
-                  {{ block.name }}
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="w-full p-4">
-            <button @click="saveBlocks" class="w-full bg-black text-white px-4 py-2 rounded hover:bg-gray-900">
-              Save
-            </button>
-          </div>
-        </div>
+        <Sidebar
+          :containers="containers"
+          :selected-block="selectedBlock"
+          :is-editing="isEditing"
+          :container-types="containerTypes"
+          :available-blocks="availableBlocks"
+          @add-container="addContainer"
+          @add-block="addBlock"
+          @update-block-props="updateBlockProps"
+          @finish-editing="finishEditing"
+          @save-blocks="saveBlocks"
+        />
       </div>
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, computed, defineAsyncComponent, watch } from "vue";
 import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
-import DynamicOptions from "./DynamicOptions.vue";
+import Sidebar from "./Sidebar.vue";
 import "../../css/style.css";
 
 const props = defineProps({
@@ -226,14 +133,12 @@ const props = defineProps({
   },
 });
 
-const emit =defineEmits(['save']);
+const emit = defineEmits(['save']);
 
 const containers = ref(props.data);
 const selectedBlock = ref(null);
 const isEditing = ref(false);
-const searchQuery = ref("");
 const isDragging = ref(false);
-
 const draggedItem = ref(null);
 
 const containerTypes = [
@@ -242,37 +147,6 @@ const containerTypes = [
   { type: 'third', name: '1/3 - 1/3 - 1/3 (3 blocks per row)', blocksPerRow: 3 },
   { type: 'quarter', name: '1/4 - 1/4 - 1/4 - 1/4 (4 blocks per row)', blocksPerRow: 4 },
 ];
-
-const startDragContainer = (containerType) => {
-  draggedItem.value = { type: 'container', ...containerType };
-};
-
-const startDragBlock = (block) => {
-  draggedItem.value = { type: 'block', ...block };
-};
-
-const handleDrop = (event) => {
-  if (draggedItem.value) {
-    const dropPosition = getDropPosition(event);
-    if (draggedItem.value.type === 'container') {
-      addContainer(draggedItem.value.type, dropPosition);
-    } else if (draggedItem.value.type === 'block') {
-      addBlock(draggedItem.value, null, dropPosition);
-    }
-    draggedItem.value = null;
-  }
-};
-
-const getDropPosition = (event) => {
-  const containerElements = document.querySelectorAll('.container');
-  for (let i = 0; i < containerElements.length; i++) {
-    const rect = containerElements[i].getBoundingClientRect();
-    if (event.clientY < rect.bottom) {
-      return i;
-    }
-  }
-  return containers.value.length;
-};
 
 const availableBlocks = computed(() => {
   if (!Array.isArray(props.registeredBlocks)) {
@@ -304,11 +178,99 @@ const availableBlocks = computed(() => {
   }));
 });
 
-const filteredBlocks = computed(() => {
-  return availableBlocks.value.filter((block) =>
-    block.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
-});
+const handleDrop = (event, containerId, index) => {
+  console.log('Drop event triggered', { containerId, index });
+  
+  // Prevent default to avoid opening the dropped content as a link in some browsers
+  event.preventDefault();
+
+  // Check if we've already processed this drop event
+  if (event.dataTransfer.dropEffect !== 'none') {
+    console.log('Drop already processed');
+    return;
+  }
+
+  let data;
+  try {
+    data = JSON.parse(event.dataTransfer.getData('text/plain'));
+  } catch (error) {
+    console.error('Failed to parse drag data', error);
+    return;
+  }
+
+  console.log('Parsed drop data', data);
+
+  if (data.type === 'container' && !containerId) {
+    const dropIndex = getDropIndex(event);
+    addContainer(data.containerType.type, dropIndex);
+  } else if (data.type === 'block') {
+    let targetContainerId = containerId;
+    if (!targetContainerId) {
+      targetContainerId = getNearestContainerId(event);
+      if (!targetContainerId) {
+        addContainer('full');
+        targetContainerId = containers.value[0].id;
+      }
+    }
+    const container = containers.value.find(c => c.id === targetContainerId);
+    if (container) {
+      const dropIndex = index !== undefined ? index : getDropIndexInContainer(event, container);
+      addBlock(data.block, targetContainerId, dropIndex);
+    }
+  }
+
+  // Mark this drop as processed
+  event.dataTransfer.dropEffect = 'move';
+
+  // Clear the drag data
+  event.dataTransfer.clearData();
+};
+
+const getDropIndex = (event) => {
+  const containerElements = document.querySelectorAll('.container');
+  for (let i = 0; i < containerElements.length; i++) {
+    const rect = containerElements[i].getBoundingClientRect();
+    if (event.clientY < rect.bottom) {
+      return i;
+    }
+  }
+  return containers.value.length;
+};
+
+const getDropIndexInContainer = (event, container) => {
+  const containerElement = document.querySelector(`[data-container-id="${container.id}"]`);
+  if (!containerElement) return container.blocks.length;
+
+  const blockElements = containerElement.querySelectorAll('[data-block-id]');
+  const containerRect = containerElement.getBoundingClientRect();
+  const relativeY = event.clientY - containerRect.top;
+
+  for (let i = 0; i < blockElements.length; i++) {
+    const blockRect = blockElements[i].getBoundingClientRect();
+    const blockMiddle = blockRect.top + blockRect.height / 2 - containerRect.top;
+    if (relativeY < blockMiddle) {
+      return i;
+    }
+  }
+  return container.blocks.length;
+};
+
+const getNearestContainerId = (event) => {
+  const containerElements = document.querySelectorAll('.container');
+  let nearestContainer = null;
+  let minDistance = Infinity;
+
+  containerElements.forEach((container) => {
+    const rect = container.getBoundingClientRect();
+    const distance = Math.abs(event.clientY - (rect.top + rect.height / 2));
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestContainer = container;
+    }
+  });
+
+  return nearestContainer ? nearestContainer.getAttribute('data-container-id') : null;
+};
 
 const addContainer = (type, position = containers.value.length) => {
   const newContainer = {
@@ -320,6 +282,8 @@ const addContainer = (type, position = containers.value.length) => {
 };
 
 const addBlock = (block, containerId = null, position = 0) => {
+  console.log('Adding block', { block, containerId, position });
+
   const newBlock = {
     ...JSON.parse(JSON.stringify(block)),
     props: JSON.parse(JSON.stringify(block.defaultProps)),
@@ -330,15 +294,16 @@ const addBlock = (block, containerId = null, position = 0) => {
     const container = containers.value.find(c => c.id === containerId);
     if (container) {
       container.blocks.splice(position, 0, newBlock);
+      console.log('Block added to container', { containerId, blockId: newBlock.id });
     }
   } else if (containers.value.length > 0) {
     containers.value[0].blocks.splice(position, 0, newBlock);
+    console.log('Block added to first container', { containerId: containers.value[0].id, blockId: newBlock.id });
   } else {
     addContainer('full');
     containers.value[0].blocks.push(newBlock);
+    console.log('New container created and block added', { containerId: containers.value[0].id, blockId: newBlock.id });
   }
-
-  selectedBlock.value = newBlock.id;
 };
 
 const selectBlock = (id) => {
@@ -424,13 +389,9 @@ const containerClass = computed(() => ({
   "w-full md:w-[calc(100%-320px)]": !isMobilePreview.value,
 }));
 
-const getContainerClass = (type) => {
-  return 'w-full'; // All containers are full width now
-};
-
 const getBlockWrapperClass = (containerType) => {
   const containerConfig = containerTypes.find(ct => ct.type === containerType);
-  if (!containerConfig) return 'w-full p-2';
+  if (!containerConfig) return 'w-full p-2 ';
 
   const widthClass = {
     1: 'w-full',
@@ -472,6 +433,36 @@ const saveBlocks = () => {
 
   emit('save', JSON.stringify(blocksData));
 };
+
+const getContainerBlocksPerRow = (type) => {
+  const containerConfig = containerTypes.find(ct => ct.type === type);
+  return containerConfig ? containerConfig.blocksPerRow : 1;
+};
+
+const getBlocksWithPlaceholders = (container) => {
+  const blocksPerRow = getContainerBlocksPerRow(container.type);
+  const result = [];
+  const existingBlocksCount = container.blocks.length;
+
+  // If the container is already full or has more blocks than a single row,
+  // don't add any placeholders
+  if (existingBlocksCount >= blocksPerRow) {
+    return container.blocks;
+  }
+
+  // Only add placeholders to complete the current row
+  const placeholdersToAdd = blocksPerRow - existingBlocksCount;
+
+  for (let i = 0; i < blocksPerRow; i++) {
+    if (i < existingBlocksCount) {
+      result.push(container.blocks[i]);
+    } else if (i < existingBlocksCount + placeholdersToAdd) {
+      result.push({ isPlaceholder: true, id: `placeholder-${container.id}-${i}` });
+    }
+  }
+
+  return result;
+};
 </script>
 
 <style scoped>
@@ -494,4 +485,13 @@ const saveBlocks = () => {
   display: flex;
   flex-wrap: wrap;
 }
+
+.block-placeholder {
+  transition: all 0.3s ease;
+}
+
+.block-placeholder:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
 </style>
+
