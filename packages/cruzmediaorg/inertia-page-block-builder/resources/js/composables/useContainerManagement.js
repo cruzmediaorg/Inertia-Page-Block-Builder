@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue';
 import useContainerAttributes from './useContainerAttributes';
 
+const { createAttributes } = useContainerAttributes();
+
 const containerTypes = [
   { type: 'full', name: 'Full Width (1 column)', columnsCount: 1 },
   { type: 'half', name: '1/2 - 1/2 (2 columns)', columnsCount: 2 },

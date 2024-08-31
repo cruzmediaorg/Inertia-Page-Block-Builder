@@ -32,7 +32,7 @@
     <div class="flex-1 overflow-hidden border-t" >
       <div class="flex flex-col md:flex-row h-full ">
         <div
-          :class="[containerClass, 'w-full md:w-[calc(100%-320px)] overflow-y-auto p-4']"
+          :class="[containerClass, 'w-full md:w-[calc(100%-320px)] overflow-y-auto ']"
           @dragover.prevent
           @drop="handleDrop($event)"
           @click="selectContainer(null)"
