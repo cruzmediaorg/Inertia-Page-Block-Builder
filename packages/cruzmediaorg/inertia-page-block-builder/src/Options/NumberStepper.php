@@ -1,8 +1,6 @@
 <?php
 
-namespace App\IPBB\Options;
-
-use Cruzmediaorg\InertiaPageBlockBuilder\Options\Option;
+namespace Cruzmediaorg\InertiaPageBlockBuilder\Options;
 
 class NumberStepper extends Option
 {

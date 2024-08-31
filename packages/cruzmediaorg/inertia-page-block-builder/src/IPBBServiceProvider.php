@@ -25,11 +25,11 @@ class IPBBServiceProvider extends ServiceProvider
             __DIR__.'/../config/ipbb.php' => config_path('ipbb.php'),
         ], 'ipbb-config');
 
-        // Publish directories
-        $this->publishes([
-            __DIR__.'/../stubs/IPBB' => base_path('app/IPBB'),
-            __DIR__.'/../stubs/js/IPBB' => resource_path('js/IPBB'),
-        ], 'ipbb-stubs');
+        // // Publish directories
+        // $this->publishes([
+        //     __DIR__.'/../stubs/IPBB' => base_path('app/IPBB'),
+        //     __DIR__.'/../stubs/js/IPBB' => resource_path('js/IPBB'),
+        // ], 'ipbb-stubs');
 
         // Publish stubs
         $this->publishes([

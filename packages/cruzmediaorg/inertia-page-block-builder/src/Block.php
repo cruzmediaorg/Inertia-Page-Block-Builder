@@ -2,7 +2,7 @@
 
 namespace Cruzmediaorg\InertiaPageBlockBuilder;
 
-use App\IPBB\Options\Spacing;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Spacing;
 
 abstract class Block
 {

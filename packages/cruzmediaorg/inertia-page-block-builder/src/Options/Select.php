@@ -1,24 +1,33 @@
 <?php
 
-namespace App\IPBB\Options;
+namespace Cruzmediaorg\InertiaPageBlockBuilder\Options;
 
-use Cruzmediaorg\InertiaPageBlockBuilder\Options\Option;
-
-class ColorPicker extends Option
+class Select extends Option
 {
+    protected array $options = [];
+
     public function toArray(): array
     {
         return [
-            'type' => 'colorpicker',
+            'type' => 'select',
             'label' => $this->label,
             'name' => $this->name,
             'attributes' => $this->attributes,
             'componentPath' => $this->getComponentPath(),
+            'options' => $this->options,
         ];
     }
 
     public static function make(string $label, string $name, array $attributes = [], ?string $componentPath = null): self
     {
         return new self($label, $name, $attributes, $componentPath);
+    }
+
+    public function options(array $options): self
+    {
+        $this->options = array_map(function ($text, $value) {
+            return ['value' => $value, 'text' => $text];
+        }, $options, array_keys($options));
+        return $this;
     }
 }

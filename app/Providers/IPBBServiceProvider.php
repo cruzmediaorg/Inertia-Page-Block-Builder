@@ -4,9 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Cruzmediaorg\InertiaPageBlockBuilder\BlockManager;
-use App\IPBB\ExampleBlock;
-use App\IPBB\MegaCustomizableHeaderBlock;
-use App\IPBB\TextBlock;
+use Cruzmediaorg\InertiaPageBlockBuilder\Blocks\TextBlock;
 
 class IPBBServiceProvider extends ServiceProvider
 {

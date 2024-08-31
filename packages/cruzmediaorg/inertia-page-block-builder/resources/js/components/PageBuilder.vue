@@ -201,19 +201,14 @@ const availableBlocks = computed(() => {
   return props.registeredBlocks.map((block) => ({
     name: block.name,
     reference: block.reference,
-    component: markRaw(defineAsyncComponent({
-      loader: () =>
-        import(
-          /* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.render}.vue`
-        ),
-      error: FallbackBlock,
-      onError: (error, retry, fail, attempts) => {
-        if (attempts <= 3) {
-          retry();
-        } else {
-          fail();
-        }
-      },
+    component: markRaw(defineAsyncComponent(() => {
+      return import(/* @vite-ignore */ `../components/Blocks/${block.render}.vue`)
+        .catch(() => {
+          return import(/* @vite-ignore */ `../../../../../../../../resources/js/IPBB/Blocks/${block.render}.vue`)
+            .catch((error) => {
+              return FallbackBlock;
+            });
+        });
     })),
     options: block.options,
     defaultProps: block.data,
@@ -434,7 +429,6 @@ const loadPageContent = () => {
   }
 };
 
-// Call this function when the component is mounted
 onMounted(() => {
   loadPageContent();
 });

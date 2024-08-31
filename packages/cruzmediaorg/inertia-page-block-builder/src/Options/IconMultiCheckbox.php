@@ -1,17 +1,15 @@
 <?php
 
-namespace App\IPBB\Options;
+namespace Cruzmediaorg\InertiaPageBlockBuilder\Options;
 
-use Cruzmediaorg\InertiaPageBlockBuilder\Options\Option;
-
-class Select extends Option
+class IconMultiCheckbox extends Option
 {
     protected array $options = [];
 
     public function toArray(): array
     {
         return [
-            'type' => 'select',
+            'type' => 'iconmulticheckbox',
             'label' => $this->label,
             'name' => $this->name,
             'attributes' => $this->attributes,
@@ -27,9 +25,7 @@ class Select extends Option
 
     public function options(array $options): self
     {
-        $this->options = array_map(function ($text, $value) {
-            return ['value' => $value, 'text' => $text];
-        }, $options, array_keys($options));
+        $this->options = $options;
         return $this;
     }
 }

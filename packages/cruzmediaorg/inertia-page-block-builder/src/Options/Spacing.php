@@ -1,8 +1,7 @@
 <?php
 
-namespace App\IPBB\Options;
+namespace Cruzmediaorg\InertiaPageBlockBuilder\Options;
 
-use Cruzmediaorg\InertiaPageBlockBuilder\Options\Option;
 
 class Spacing extends Option
 {

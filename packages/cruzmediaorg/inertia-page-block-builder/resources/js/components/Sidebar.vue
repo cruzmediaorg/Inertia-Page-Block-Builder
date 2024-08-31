@@ -80,6 +80,11 @@
                 <input type="text" v-model="selectedContainer.attributes.backgroundColor" class="ml-2 flex-grow px-2 py-1 border rounded-md" @change="updateContainerAttributes">
               </div>
             </div>
+            <ColorPickerOption
+              label="Background Color"
+              name="backgroundColor"
+              v-model="selectedContainer.attributes.backgroundColor"
+            />
 
             <!-- Padding -->
             <SpacingInput

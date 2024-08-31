@@ -1,13 +1,13 @@
 <?php
 
-namespace App\IPBB;
+namespace Cruzmediaorg\InertiaPageBlockBuilder\Blocks;
 
-use App\IPBB\Options\ColorPicker;
-use App\IPBB\Options\IconMultiCheckbox;
-use App\IPBB\Options\IconRadioSelector;
-use App\IPBB\Options\NumberStepper;
-use App\IPBB\Options\Select;
 use Cruzmediaorg\InertiaPageBlockBuilder\Block;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\ColorPicker;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\IconMultiCheckbox;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\IconRadioSelector;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\NumberStepper;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Select;
 use Cruzmediaorg\InertiaPageBlockBuilder\Options\Input;
 
 class TextBlock extends Block

@@ -19,9 +19,9 @@ class {{name}}Block extends Block
 
     public function options(): array
     {
-        return [
+        return array_merge([
             Input::make('Title', 'title'),
-        ];
+        ], parent::options());
     }
 
     public function render(): string
