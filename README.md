@@ -1,66 +1,171 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# Inertia Page Block Builder (WIP) ⚠️ 
 
-## About Laravel
+Inertia Page Block Builder is a lightweight drag-and-drop page block builder. This package provides a fully customizable visual page builder for developers, allowing them to create custom blocks and options. 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+I started this project  because I often need to build custom landing pages without too much configuration or database structure. This helps me adding flexibility by just building "Customizable blocks" and "Options", and build the website using a UI Drag and Drop tool.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Built with Laravel 11, Inertia.js, Vue 3.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Compatibility
+- PHP ^8.0
+- Vue 3
+- Inertia.js 1.0
+- Laravel ^10
+  
+## Usage/Examples
 
-## Learning Laravel
+#### Creating a New Block:
+```cli
+php artisan make:block ExampleBlock
+```
+#### This creates a new ExampleBlock.php block class:
+```php
+<?php
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+namespace App\IPBB;
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+use Cruzmediaorg\InertiaPageBlockBuilder\Block;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Input;
+use Cruzmediaorg\InertiaPageBlockBuilder\Options\Textarea;
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+class ExampleBlock extends Block
+{
+    public string $name = 'Example';
 
-## Laravel Sponsors
+    public static string $reference = 'ipbb.example';
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+    public array $data = [
+        'title' => 'A default title',
+        'content' => 'Default content',
+        'backgroundColor' => '#000000',
+    ];
 
-### Premium Partners
+    public function options(): array
+    {
+        return [
+            Input::make('Title', 'title'),
+            Textarea::make('Content', 'content'),
+            Input::make('Background Color', 'backgroundColor', ['type' => 'color']),
+        ];
+    }
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+    public function render(): string
+    {
+        return 'Example/Render';
+    }
+}
+```
 
-## Contributing
+#### And a Example/Render.vue file
+```vue
+<template>
+    <header :style="{ backgroundColor: backgroundColor }" class="py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
+                {{ title }}
+            </h1>
+            <h2 v-if="content" class="mt-3 text-xl text-gray-300 sm:text-2xl md:text-3xl">
+                {{ content }}
+            </h2>
+        </div>
+    </header>
+</template>
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+<script setup>
+import { defineProps } from 'vue';
 
-## Code of Conduct
+const props = defineProps({
+    title: {
+        type: String,
+        required: true,
+    },
+    content: {
+        type: String,
+        default: '',
+    },
+    name: {
+        type: String,
+        required: true,
+    },
+    backgroundColor: {
+        type: String,
+        default: '#000000',
+    },
+});
+</script>
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#### Then, we need to register the block in the IPBBServiceProvider:
 
-## Security Vulnerabilities
+```php
+<?php
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Cruzmediaorg\InertiaPageBlockBuilder\BlockManager;
+use App\IPBB\ExampleBlock;
+use App\IPBB\MegaCustomizableHeaderBlock;
+
+class IPBBServiceProvider extends ServiceProvider
+{
+    public function boot()
+    {
+        $this->app->afterResolving(BlockManager::class, function (BlockManager $blockManager) {
+            // Register your blocks here
+            $blockManager->registerBlock(ExampleBlock::class);
+            $blockManager->registerBlock(MegaCustomizableHeaderBlock::class);
+        });
+    }
+}
+```
+That's it, we got our block registered, now, in the frontend:
+
+#### Using the Page Builder in Vue 3:
+```vue
+<template>
+            <PageBuilderComponent :registeredBlocks="blocks" :data="page.content" @save="saveBlocks" />
+</template>
+
+<script setup>
+import PageBuilderComponent from '@/../../packages/cruzmediaorg/inertia-page-block-builder/resources/js/components/PageBuilder.vue';
+import { router } from '@inertiajs/vue3';
+const props = defineProps(['blocks', 'page']);
+
+const saveBlocks = (blocks) => {
+    router.put(route('pages.update', props.page.id), {
+        content: JSON.parse(blocks)
+    });
+}
+</script>
+```
+
+#### Rendering the page:
+```vue
+<template>
+    <PageBlockRenderer :blocks="page.content" />
+</template>
+
+<script setup>
+import PageBlockRenderer from '@/../../packages/cruzmediaorg/inertia-page-block-builder/resources/js/components/PageBlockRenderer.vue';
+const props = defineProps(['page']);
+</script>
+```
+
+
+## Screenshots
+
+<img width="1713" alt="image" src="https://github.com/user-attachments/assets/74aa0af1-a3cd-43bb-bcc9-61cd9d7c8b81">
+
+
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+[MIT](https://choosealicense.com/licenses/mit/)
+
+
+## Authors
+
+- [@cruzmediaorg](https://www.github.com/cruzmediaorg)
+
