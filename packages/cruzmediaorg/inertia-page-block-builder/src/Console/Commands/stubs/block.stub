@@ -4,24 +4,23 @@ namespace App\IPBB;
 
 use Cruzmediaorg\InertiaPageBlockBuilder\Block;
 use Cruzmediaorg\InertiaPageBlockBuilder\Options\Input;
-use Cruzmediaorg\InertiaPageBlockBuilder\Options\Textarea;
 
 class {{name}}Block extends Block
 {
     public string $name = '{{name}}';
 
+    public string $icon = 'fa-solid fa-cube'
+
     public static string $reference = 'ipbb.{{lowername}}';
 
     public array $data = [
         'title' => 'A default title',
-        'content' => 'Default content',
     ];
 
     public function options(): array
     {
         return [
             Input::make('Title', 'title'),
-            Textarea::make('Content', 'content'),
         ];
     }
 

@@ -27,6 +27,7 @@ class BlockManager
                     return $option->toArray();
                 }, $block->options()),
                 'render' => $block->render(),
+                'icon' => $block->icon,
             ];
         }, $this->blocks);
     }

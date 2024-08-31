@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Cruzmediaorg\InertiaPageBlockBuilder\BlockManager;
 use App\IPBB\ExampleBlock;
 use App\IPBB\MegaCustomizableHeaderBlock;
+use App\IPBB\TextBlock;
 
 class IPBBServiceProvider extends ServiceProvider
 {
@@ -13,8 +14,7 @@ class IPBBServiceProvider extends ServiceProvider
     {
         $this->app->afterResolving(BlockManager::class, function (BlockManager $blockManager) {
             // Register your blocks here
-            $blockManager->registerBlock(ExampleBlock::class);
-            $blockManager->registerBlock(MegaCustomizableHeaderBlock::class);
+            $blockManager->registerBlock(TextBlock::class);
         });
     }
 }

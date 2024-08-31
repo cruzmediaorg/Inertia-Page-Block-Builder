@@ -146,8 +146,10 @@
     </div>
   </div>
   <pre>
-    {{ containers }}
+    {{ blocksData }}
   </pre>
+  <button class="bg-black text-white px-4 py-2 rounded-full absolute right-4 bottom-0" @click="saveBlocks">Save Blocks</button>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </template>
 
 <script setup>
@@ -160,6 +162,7 @@ import useContainerManagement, { getContainerColumnsCount } from '../composables
 import useDragAndDrop from "../composables/useDragAndDrop";
 import "../../css/style.css";
 import "./PageBuilder.css";
+
 
 const props = defineProps({
   registeredBlocks: {
@@ -174,6 +177,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['save']);
+const blocksData = ref([]);
 
 const {
   containers,
@@ -215,7 +219,7 @@ const availableBlocks = computed(() => {
     })),
     options: block.options,
     defaultProps: block.data,
-    icon: "fas fa-cube",
+    icon: block.icon,
   }));
 });
 
@@ -334,21 +338,21 @@ const getSelectedBlock = () => {
 };
 
 const saveBlocks = () => {
-  const blocksData = containers.value.map(container => ({
+  blocksData.value = containers.value.map(container => ({
     id: container.id,
     type: container.type,
+    attributes: container.attributes,
     columns: container.columns.map(column => ({
       blocks: column.blocks.map(block => ({
         id: block.id,
         name: block.name,
         reference: block.reference,
         props: block.props,
-        options: block.options,
       })),
     })),
   }));
 
-  emit('save', JSON.stringify(blocksData));
+  // emit('save', JSON.stringify(blocksData));
 };
 
 const selectContainerById = (containerId) => {

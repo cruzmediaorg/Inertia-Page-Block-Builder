@@ -1,12 +1,10 @@
 <template>
-  <div>
-    <h1>{{ title }}</h1>
-    <p> {{ content }} </p>
-  </div>
+    <h1 :style="computedStyle">{{ title }}</h1>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import useBlockAttributes from '@/../../packages/cruzmediaorg/inertia-page-block-builder/resources/js/composables/useBlockAttributes.js';
 
 // Props
 const props = defineProps({
@@ -14,11 +12,21 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  content: {
-    type: String,
-    default: '',
+  padding: {
+    type: Object,
+    required: true,
+  },
+  margin: {
+    type: Object,
+    required: true,
   },
 });
+
+const { blockStyle } = useBlockAttributes(props);
+
+const computedStyle = computed(() => ({
+  ...blockStyle.value,
+}))
 
 const blockName = computed(() => '{{ name }}'.toLowerCase());
 </script>

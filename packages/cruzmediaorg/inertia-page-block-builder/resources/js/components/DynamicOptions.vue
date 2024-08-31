@@ -1,10 +1,11 @@
 <template>
-  <div class="ipbb-options">
+  <div class="flex flex-col gap-2 divide-y">
     <component
       v-for="(option, index) in options"
       :key="index"
       :is="getComponentType(option)"
       v-bind="option"
+      class="flex flex-col mt-2 py-2"
       :modelValue="localProps[option.name]"
       @update:modelValue="updateLocalProp(option.name, $event)"
     />

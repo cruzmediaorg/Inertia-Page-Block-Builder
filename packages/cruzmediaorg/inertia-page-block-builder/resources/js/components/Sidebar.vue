@@ -42,11 +42,22 @@
               <div class="mb-6">
                 <h4 class="font-medium text-gray-700 mb-2">Blocks</h4>
                 <input v-model="searchQuery" type="text" placeholder="Search blocks..." class="w-full mb-2 p-2 border rounded-md">
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-3 gap-2">
                   <div v-for="block in filteredBlocks" :key="block.reference" 
-                       class="border rounded-md p-2 cursor-move hover:bg-gray-50 transition-colors duration-200"
+                       class="border 
+                       flex flex-col 
+                       justify-center 
+                       items-center 
+                       rounded-md 
+                       h-24
+                       w-24
+                       cursor-move 
+                       hover:bg-gray-50 
+                       transition-colors 
+                       duration-200 text-sm"
                        draggable="true"
                        @dragstart="startDragBlock(block, $event)">
+                    <i :class="block.icon" class="text-xl mb-2"></i> 
                     {{ block.name }}
                   </div>
                 </div>
@@ -97,7 +108,7 @@
             <!-- Hide on Mobile -->
             <div>
               <label class="flex items-center">
-                <input type="checkbox" v-model="selectedContainer.attributes.hideOnMobile" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" @change="updateContainerAttributes">
+                <input type="checkbox" v-model="selectedContainer.attributes.hideOnMobile" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-gray-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" @change="updateContainerAttributes">
                 <span class="ml-2 text-sm text-gray-600">Hide on Mobile</span>
               </label>
             </div>
@@ -144,12 +155,6 @@
             :options="getSelectedBlockOptions()"
             @update:modelValue="updateBlockProps"
           />
-          <button
-            @click="finishEditing"
-            class="mt-4 w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200"
-          >
-            Done
-          </button>
         </div>
 
         <div v-else-if="activeTab === 'CONTAINER'">
@@ -159,30 +164,6 @@
           >
             Edit Container
           </button>
-          <!-- You can add a preview of container settings here if needed -->
-        </div>
-      </div>
-
-      <!-- Layer view -->
-      <div v-if="!selectedContainer && !selectedBlock">
-        <h4 class="font-medium text-gray-700 mb-2">Layers</h4>
-        <div v-for="container in containers" :key="container.id" class="mb-4">
-          <div @click="selectContainer(container.id)" class="cursor-pointer">
-            <ContainerPreview :type="container.type" />
-          </div>
-          <ul class="space-y-1 mt-2">
-            <li v-for="(column, columnIndex) in container.columns" :key="columnIndex">
-              <div v-for="block in column.blocks" :key="block.id" class="flex items-center">
-                <button 
-                  @click="selectBlock(block.id)" 
-                  class="text-left w-full py-1 px-2 text-sm hover:bg-gray-100 rounded-md transition-colors duration-200"
-                  :class="{ 'bg-indigo-100': selectedBlock === block.id }"
-                >
-                  {{ block.name || 'Empty' }}
-                </button>
-              </div>
-            </li>
-          </ul>
         </div>
       </div>
     </div>
