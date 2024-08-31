@@ -61,6 +61,7 @@ class PageController extends Controller
                 'options' => $block['options'],
                 'render' => $block['render'],
                 'data' => $block['data'],
+                'icon' => $block['icon'],
             ];
         }, array_keys($registeredBlocks), $registeredBlocks));
 

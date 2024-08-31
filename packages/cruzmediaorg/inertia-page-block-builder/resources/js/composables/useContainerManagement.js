@@ -13,17 +13,8 @@ export const getContainerColumnsCount = (type) => {
   return containerConfig ? containerConfig.columnsCount : 1;
 };
 
-export default function useContainerManagement(initialContainers = []) {
-  const { createAttributes } = useContainerAttributes();
-  const containers = ref(initialContainers.map(container => ({
-    ...container,
-    columns: container.columns.map(column => ({
-      ...column,
-      blocks: column.blocks || []
-    })),
-    attributes: createAttributes(container.attributes),
-  })));
-
+export default function useContainerManagement(initialData = [], registeredBlocks = []) {
+  const containers = ref(initialData);
   const selectedContainerId = ref(null);
 
   const selectedContainer = computed(() => 
@@ -66,6 +57,23 @@ export default function useContainerManagement(initialContainers = []) {
     }
   };
 
+  const loadContainers = (data) => {
+    containers.value = data.map(container => ({
+      ...container,
+      columns: container.columns.map(column => ({
+        ...column,
+        blocks: column.blocks.map(block => {
+          const registeredBlock = registeredBlocks.find(rb => rb.name === block.name);
+          return {
+            ...block,
+            options: registeredBlock ? registeredBlock.options : [],
+            defaultProps: registeredBlock ? registeredBlock.data : {}
+          };
+        })
+      }))
+    }));
+  };
+
   return {
     containers,
     selectedContainer,
@@ -73,7 +81,7 @@ export default function useContainerManagement(initialContainers = []) {
     updateContainerAttributes,
     selectContainer,
     deselectContainer,
-    addBlockToColumn,
     containerTypes,
+    loadContainers,
   };
 }

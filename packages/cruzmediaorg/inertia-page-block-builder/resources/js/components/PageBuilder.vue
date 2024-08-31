@@ -145,15 +145,14 @@
       </div>
     </div>
   </div>
-  <pre>
-    {{ blocksData }}
-  </pre>
+ 
   <button class="bg-black text-white px-4 py-2 rounded-full absolute right-4 bottom-0" @click="saveBlocks">Save Blocks</button>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </template>
 
+
 <script setup>
-import { ref, computed, defineAsyncComponent, watch, reactive, markRaw } from "vue";
+import { ref, computed, defineAsyncComponent, watch, reactive, markRaw, onMounted } from "vue";
 import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
@@ -163,16 +162,14 @@ import useDragAndDrop from "../composables/useDragAndDrop";
 import "../../css/style.css";
 import "./PageBuilder.css";
 
-
 const props = defineProps({
   registeredBlocks: {
     type: Array,
     required: true,
   },
-  data: {
-    type: Array,
-    required: false,
-    default: () => [],
+  page: {
+    type: Object,
+    required: true,
   },
 });
 
@@ -187,7 +184,8 @@ const {
   selectContainer,
   deselectContainer,
   containerTypes,
-} = useContainerManagement(props.data);
+  loadContainers,
+} = useContainerManagement([], props.registeredBlocks);
 
 const selectedBlock = ref(null);
 const selectedBlockData = ref(null);
@@ -352,7 +350,7 @@ const saveBlocks = () => {
     })),
   }));
 
-  // emit('save', JSON.stringify(blocksData));
+  emit('save', JSON.stringify(blocksData.value));
 };
 
 const selectContainerById = (containerId) => {
@@ -420,5 +418,25 @@ const { isDragging, draggedItem, dragStart, dragEnd, handleDrop } = useDragAndDr
   addBlock,
   moveBlock
 );
+
+// Add this new function to load the page content
+const loadPageContent = () => {
+  if (props.page && props.page.content) {
+    let pageContent;
+    try {
+      pageContent = typeof props.page.content === 'string' ? JSON.parse(props.page.content) : props.page.content;
+    } catch (error) {
+      console.error('Failed to parse page content:', error);
+      pageContent = [];
+    }
+    loadContainers(pageContent);
+    blocksData.value = pageContent;
+  }
+};
+
+// Call this function when the component is mounted
+onMounted(() => {
+  loadPageContent();
+});
 </script>
 

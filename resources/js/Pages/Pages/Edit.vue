@@ -1,6 +1,6 @@
 <template>
     <AuthenticatedLayout>   
-            <PageBuilderComponent :registeredBlocks="blocks" :data="page.content" @save="saveBlocks" />
+            <PageBuilderComponent :registeredBlocks="blocks" :page="page" @save="saveBlocks" />
     </AuthenticatedLayout>
 </template>
 

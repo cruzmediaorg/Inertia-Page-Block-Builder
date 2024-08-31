@@ -1,5 +1,6 @@
 <template>
-            <PageBlockRenderer :blocks="page.content" />
+            <PageBlockRenderer :page="page" />
+
 </template>
 
 <script setup>
