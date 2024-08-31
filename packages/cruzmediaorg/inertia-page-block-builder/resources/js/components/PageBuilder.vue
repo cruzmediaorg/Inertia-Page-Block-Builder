@@ -34,7 +34,7 @@
         <div
           :class="[containerClass, 'w-full md:w-[calc(100%-320px)] overflow-y-auto p-4']"
           @dragover.prevent
-          @drop="handleDrop"
+          @drop="handleDrop($event)"
           @click="selectContainer(null)"
         > 
           <draggable
@@ -45,22 +45,16 @@
             @end="dragEnd"
             group="containers"
           >
-          <template #item="{ element: container }">
+            <template #item="{ element: container }">
               <div 
                 class="container border border-dashed border-gray-300 relative" 
                 @dragover.prevent 
                 @drop.stop="handleDrop($event, container.id)" 
                 :data-container-id="container.id"
-                :style="{
-                  backgroundColor: container.attributes.backgroundColor,
-                  padding: `${container.attributes.paddingTop} ${container.attributes.paddingRight} ${container.attributes.paddingBottom} ${container.attributes.paddingLeft}`,
-                  margin: `${container.attributes.marginTop} ${container.attributes.marginRight} ${container.attributes.marginBottom} ${container.attributes.marginLeft}`,
-                  borderRadius: container.attributes.borderRadius,
-                  display: container.attributes.hideOnMobile && isMobilePreview ? 'none' : 'block',
-                }"
+                :style="getContainerStyle(container)"
               >
                 <button 
-                  @click.stop="selectContainer(container.id)"
+                  @click.stop="selectContainerById(container.id)"
                   class="container-drag-handle absolute top-2 left-2 z-50 bg-white p-1 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-200"
                 >
                   <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -73,27 +67,25 @@
                     gap: container.attributes.blockGap,
                   }"
                 >
-                  <draggable
-                    :list="container.blocks"
-                    :item-key="(block) => block.id || block.placeholderId"
-                    handle=".block-drag-handle"
-                    group="blocks"
-                    @start="dragStart($event, 'block')"
-                    @end="dragEnd"
-                    @change="(e) => moveBlock(e.moved.element.id, container.id, e.moved.newIndex)"
-                    class="flex w-full">
-                    <template #item="{ element: block, index }">
-                      <div :data-block-id="block.id" :class="[getBlockWrapperClass(container.type, container.attributes), 'flex-grow']">
-                        <template v-if="block.isPlaceholder">
-                          <div 
-                            class="block-placeholder min-h-24 h-full border-2 border-dashed border-gray-300 flex items-center justify-center"
-                            @dragover.prevent
-                            @drop.stop="handleDrop($event, container.id, index)"
-                          >
-                            <p class="text-gray-400 text-sm">Drag a block here</p>
-                          </div>
-                        </template>
-                        <template v-else>
+                  <div 
+                    v-for="(column, columnIndex) in container.columns" 
+                    :key="columnIndex"
+                    :class="getColumnClass(container.type)"
+                    @dragover.prevent
+                    @drop.stop="handleDrop($event, container.id, columnIndex)"
+                  >
+                    <draggable
+                      :list="column.blocks"
+                      :item-key="(block) => block.id"
+                      handle=".block-drag-handle"
+                      group="blocks"
+                      @start="(evt) => dragStart(evt, 'block')"
+                      @end="dragEnd"
+                      @change="(e) => moveBlock(e.moved.element.id, container.id, columnIndex, e.moved.newIndex)"
+                      class="flex flex-col w-full"
+                    >
+                      <template #item="{ element: block, index }">
+                        <div :data-block-id="block.id" class="w-full">
                           <div
                             class="group relative h-full"
                             :class="{
@@ -105,23 +97,22 @@
                             <BlockActions
                               class="block-actions"
                               @edit="selectBlock(block.id)"
-                              @delete="deleteBlock(container.id, block.id)"
-                              @duplicate="duplicateBlock(container.id, block.id)"
+                              @delete="deleteBlock(container.id, columnIndex, block.id)"
+                              @duplicate="duplicateBlock(container.id, columnIndex, block.id)"
                             />
                           </div>
-                        </template>
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-                <div v-if="!hasPlaceholders(container)" 
-                  :class="{ 'absolute -bottom-6 left-0 right-0 flex justify-center z-[10]': true, 'hidden': isMobilePreview }"
-                 class="cursor-move absolute -bottom-6 left-0 right-0 flex justify-center z-[10]">
-                  <button @click="addNewRow(container)" class=" bg-white text-gray-500  rounded-b-md py-0 px-12 hover:bg-gray-100 transition-colors border-black">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                  </button>
+                        </div>
+                      </template>
+                    </draggable>
+                    <div 
+                      v-if="column.blocks.length === 0"
+                      class="block-placeholder min-h-24 h-full border-2 border-dashed border-gray-300 flex items-center justify-center"
+                      @dragover.prevent
+                      @drop.stop="handleDrop($event, container.id, columnIndex)"
+                    >
+                      <p class="text-gray-400 text-sm">Drag a block here</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </template>
@@ -165,7 +156,7 @@ import draggable from "vuedraggable";
 import FallbackBlock from "./FallbackBlock.vue";
 import BlockActions from "./BlockActions.vue";
 import Sidebar from "./Sidebar.vue";
-import useContainerManagement from "../composables/useContainerManagement";
+import useContainerManagement, { getContainerColumnsCount } from '../composables/useContainerManagement';
 import useDragAndDrop from "../composables/useDragAndDrop";
 import "../../css/style.css";
 import "./PageBuilder.css";
@@ -191,9 +182,6 @@ const {
   updateContainerAttributes,
   selectContainer,
   deselectContainer,
-  addNewRow,
-  hasPlaceholders,
-  getContainerBlocksPerRow,
   containerTypes,
 } = useContainerManagement(props.data);
 
@@ -231,9 +219,9 @@ const availableBlocks = computed(() => {
   }));
 });
 
-const addBlock = (block, containerId, index) => {
+const addBlock = (block, containerId, columnIndex) => {
   const container = containers.value.find(c => c.id === containerId);
-  if (!container) return;
+  if (!container || !container.columns[columnIndex]) return;
 
   const newBlock = {
     ...JSON.parse(JSON.stringify(block)),
@@ -241,15 +229,7 @@ const addBlock = (block, containerId, index) => {
     id: block.id || Date.now().toString(),
   };
 
-  if (index >= container.blocks.length) {
-    index = container.blocks.length - 1;
-  }
-
-  container.blocks = [
-    ...container.blocks.slice(0, index),
-    newBlock,
-    ...container.blocks.slice(index + 1)
-  ];
+  container.columns[columnIndex].blocks.push(newBlock);
 };
 
 const selectBlock = (id) => {
@@ -272,17 +252,12 @@ const editBlock = (id) => {
   isEditing.value = true;
 };
 
-const deleteBlock = (containerId, blockId) => {
+const deleteBlock = (containerId, columnIndex, blockId) => {
   const container = containers.value.find(c => c.id === containerId);
-  if (container) {
-    const index = container.blocks.findIndex(b => b.id === blockId);
-    if (index !== -1) {
-      container.blocks[index] = {
-        isPlaceholder: true,
-        id: `placeholder-${Date.now()}-${index}`,
-        placeholderId: `placeholder-${Date.now()}-${index}`,
-        index
-      };
+  if (container && container.columns[columnIndex]) {
+    const blockIndex = container.columns[columnIndex].blocks.findIndex(b => b.id === blockId);
+    if (blockIndex !== -1) {
+      container.columns[columnIndex].blocks.splice(blockIndex, 1);
     }
   }
   if (selectedBlock.value === blockId) {
@@ -291,14 +266,14 @@ const deleteBlock = (containerId, blockId) => {
   }
 };
 
-const duplicateBlock = (containerId, blockId) => {
+const duplicateBlock = (containerId, columnIndex, blockId) => {
   const container = containers.value.find(c => c.id === containerId);
-  if (container) {
-    const originalBlock = container.blocks.find(b => b.id === blockId);
+  if (container && container.columns[columnIndex]) {
+    const originalBlock = container.columns[columnIndex].blocks.find(b => b.id === blockId);
     if (originalBlock) {
       const newBlock = JSON.parse(JSON.stringify(originalBlock));
       newBlock.id = Date.now().toString();
-      container.blocks.push(newBlock);
+      container.columns[columnIndex].blocks.push(newBlock);
     }
   }
 };
@@ -348,9 +323,11 @@ const containerClass = computed(() => ({
 
 const getSelectedBlock = () => {
   for (const container of containers.value) {
-    const block = container.blocks.find(b => b.id === selectedBlock.value);
-    if (block) {
-      return block;
+    for (const column of container.columns) {
+      const block = column.blocks.find(b => b.id === selectedBlock.value);
+      if (block) {
+        return block;
+      }
     }
   }
   return null;
@@ -360,12 +337,14 @@ const saveBlocks = () => {
   const blocksData = containers.value.map(container => ({
     id: container.id,
     type: container.type,
-    blocks: container.blocks.map(block => ({
-      id: block.id,
-      name: block.name,
-      reference: block.reference,
-      props: block.props,
-      options: block.options,
+    columns: container.columns.map(column => ({
+      blocks: column.blocks.map(block => ({
+        id: block.id,
+        name: block.name,
+        reference: block.reference,
+        props: block.props,
+        options: block.options,
+      })),
     })),
   }));
 
@@ -375,14 +354,54 @@ const saveBlocks = () => {
 const selectContainerById = (containerId) => {
   selectContainer(containerId);
   selectedBlock.value = null;
-  isEditing.value = false;
+  isEditing.value = true;
 };
 
-const getBlockWrapperClass = (containerType, containerAttributes) => {
-  const containerConfig = containerTypes.find(ct => ct.type === containerType);
-  if (!containerConfig) return 'w-full';
+const moveBlock = (blockId, targetContainerId, targetColumnIndex, newIndex) => {
+  let sourceContainer, sourceColumnIndex, sourceIndex, blockToMove;
 
-  switch (containerConfig.blocksPerRow) {
+  // Find the block to move
+  for (const container of containers.value) {
+    for (let colIndex = 0; colIndex < container.columns.length; colIndex++) {
+      const blockIndex = container.columns[colIndex].blocks.findIndex(b => b.id === blockId);
+      if (blockIndex !== -1) {
+        sourceContainer = container;
+        sourceColumnIndex = colIndex;
+        sourceIndex = blockIndex;
+        blockToMove = container.columns[colIndex].blocks[blockIndex];
+        break;
+      }
+    }
+    if (sourceContainer) break;
+  }
+
+  if (!sourceContainer || !blockToMove) return;
+
+  // Remove the block from the source column
+  sourceContainer.columns[sourceColumnIndex].blocks.splice(sourceIndex, 1);
+
+  // Add the block to the target column
+  const targetContainer = containers.value.find(c => c.id === targetContainerId);
+  if (targetContainer && targetContainer.columns[targetColumnIndex]) {
+    if (newIndex === undefined) {
+      targetContainer.columns[targetColumnIndex].blocks.push(blockToMove);
+    } else {
+      targetContainer.columns[targetColumnIndex].blocks.splice(newIndex, 0, blockToMove);
+    }
+  }
+};
+
+const getContainerStyle = (container) => ({
+  backgroundColor: container.attributes.backgroundColor,
+  padding: `${container.attributes.paddingTop} ${container.attributes.paddingRight} ${container.attributes.paddingBottom} ${container.attributes.paddingLeft}`,
+  margin: `${container.attributes.marginTop} ${container.attributes.marginRight} ${container.attributes.marginBottom} ${container.attributes.marginLeft}`,
+  borderRadius: container.attributes.borderRadius,
+  display: container.attributes.hideOnMobile && isMobilePreview.value ? 'none' : 'block',
+});
+
+const getColumnClass = (containerType) => {
+  const columnsCount = getContainerColumnsCount(containerType);
+  switch (columnsCount) {
     case 1: return 'w-full';
     case 2: return 'w-1/2';
     case 3: return 'w-1/3';
@@ -391,71 +410,11 @@ const getBlockWrapperClass = (containerType, containerAttributes) => {
   }
 };
 
-const moveBlock = (blockId, targetContainerId, targetIndex) => {
-  let sourceContainer, sourceIndex, blockToMove;
-
-  for (const container of containers.value) {
-    sourceIndex = container.blocks.findIndex(b => b.id === blockId);
-    if (sourceIndex !== -1) {
-      sourceContainer = container;
-      blockToMove = container.blocks[sourceIndex];
-      break;
-    }
-  }
-
-  if (!sourceContainer || !blockToMove) return;
-
-  // Remove the block from the source container
-  sourceContainer.blocks.splice(sourceIndex, 1);
-
-  // Add the block to the target container
-  const targetContainer = containers.value.find(c => c.id === targetContainerId);
-  if (targetContainer) {
-    if (targetIndex === undefined) {
-      targetContainer.blocks.push(blockToMove);
-    } else {
-      targetContainer.blocks.splice(targetIndex, 0, blockToMove);
-    }
-  }
-
-  // Ensure all containers have the correct number of blocks/placeholders
-  containers.value.forEach(container => {
-    const blocksPerRow = getContainerBlocksPerRow(container.type);
-    while (container.blocks.length < blocksPerRow) {
-      container.blocks.push(createPlaceholder(container.blocks.length));
-    }
-    while (container.blocks.length > blocksPerRow) {
-      const lastBlock = container.blocks.pop();
-      if (!lastBlock.isPlaceholder) {
-        // Find a container with available space
-        const availableContainer = containers.value.find(c => c.blocks.length < getContainerBlocksPerRow(c.type));
-        if (availableContainer) {
-          availableContainer.blocks.push(lastBlock);
-        }
-      }
-    }
-  });
-};
-
-const createPlaceholder = (index) => ({
-  isPlaceholder: true,
-  id: `placeholder-${Date.now()}-${index}`,
-  placeholderId: `placeholder-${Date.now()}-${index}`,
-  index
-});
-
-const { isDragging, draggedItem, dragStart, dragEnd, handleDrop: useDragAndDropHandleDrop } = useDragAndDrop(
+const { isDragging, draggedItem, dragStart, dragEnd, handleDrop } = useDragAndDrop(
   reactive({ containers }),
   addContainer,
   addBlock,
   moveBlock
 );
-
-const handleDrop = (event, containerId, index) => {
-  event.preventDefault();
-  event.stopPropagation();
-  
-  useDragAndDropHandleDrop(event, containerId, index);
-};
 </script>
 

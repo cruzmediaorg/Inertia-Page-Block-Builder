@@ -171,14 +171,16 @@
             <ContainerPreview :type="container.type" />
           </div>
           <ul class="space-y-1 mt-2">
-            <li v-for="block in container.blocks" :key="block.id" class="flex items-center">
-              <button 
-                @click="selectBlock(block.id)" 
-                class="text-left w-full py-1 px-2 text-sm hover:bg-gray-100 rounded-md transition-colors duration-200"
-                :class="{ 'bg-indigo-100': selectedBlock === block.id }"
-              >
-                {{ block.name || 'Empty' }}
-              </button>
+            <li v-for="(column, columnIndex) in container.columns" :key="columnIndex">
+              <div v-for="block in column.blocks" :key="block.id" class="flex items-center">
+                <button 
+                  @click="selectBlock(block.id)" 
+                  class="text-left w-full py-1 px-2 text-sm hover:bg-gray-100 rounded-md transition-colors duration-200"
+                  :class="{ 'bg-indigo-100': selectedBlock === block.id }"
+                >
+                  {{ block.name || 'Empty' }}
+                </button>
+              </div>
             </li>
           </ul>
         </div>
@@ -251,7 +253,7 @@ watch(() => props.selectedBlock, (newValue) => {
 
 watch(() => props.selectedContainer, (newValue) => {
   if (newValue) {
-    activeTab.value = 'BLOCKS';
+    activeTab.value = 'LAYOUT';
   }
 }, { immediate: true });
 
@@ -278,7 +280,22 @@ const finishEditing = () => {
 };
 
 const saveBlocks = () => {
-  emit('save-blocks');
+  const blocksData = props.containers.map(container => ({
+    id: container.id,
+    type: container.type,
+    columns: container.columns.map(column => ({
+      blocks: column.blocks.map(block => ({
+        id: block.id,
+        name: block.name,
+        reference: block.reference,
+        props: block.props,
+        options: block.options,
+      })),
+    })),
+    attributes: container.attributes,
+  }));
+
+  emit('save-blocks', JSON.stringify(blocksData));
 };
 
 const startDragContainer = (containerType, event) => {
@@ -306,7 +323,7 @@ const selectBlock = (blockId) => {
 
 const selectContainerOfBlock = () => {
   if (props.selectedBlock) {
-    const container = props.containers.find(c => c.blocks.some(b => b.id === props.selectedBlock.id));
+    const container = props.containers.find(c => c.columns.some(col => col.blocks.some(b => b.id === props.selectedBlock.id)));
     if (container) {
       emit('select-container', container.id);
     }

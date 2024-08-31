@@ -19,19 +19,10 @@ export default function useDragAndDrop(containersRef, addContainer, addBlock, mo
     draggedItem.value = null;
   };
 
-  const handleDrop = (event, containerId, index) => {
+  const handleDrop = (event, containerId, columnIndex) => {
     event.preventDefault();
+    event.stopPropagation();
 
-    if (draggedItem.value && draggedItem.value.type === 'block') {
-      moveBlock(draggedItem.value.id, containerId, index);
-    } else {
-      handleNewItemDrop(event, containerId, index);
-    }
-
-    dragEnd();
-  };
-
-  const handleNewItemDrop = (event, containerId, index) => {
     let data;
     try {
       data = JSON.parse(event.dataTransfer.getData('text/plain'));
@@ -43,8 +34,16 @@ export default function useDragAndDrop(containersRef, addContainer, addBlock, mo
     if (data.type === 'container' && !containerId) {
       addContainer(data.containerType.type);
     } else if (data.type === 'block') {
-      addBlock(data.block, containerId, index);
+      if (draggedItem.value && draggedItem.value.type === 'block') {
+        // Move existing block
+        moveBlock(draggedItem.value.id, containerId, columnIndex);
+      } else {
+        // Add new block
+        addBlock(data.block, containerId, columnIndex);
+      }
     }
+
+    dragEnd();
   };
 
   return {
