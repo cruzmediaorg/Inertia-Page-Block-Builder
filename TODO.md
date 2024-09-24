@@ -11,8 +11,7 @@
 - [X] Render component. IMPORTANT!
 - [] Delete a container.
 - [] Generate HTML to export... -> FUTURE.
-
-
+- [ ] Separate composer and package
 
 ## Bugs
 
