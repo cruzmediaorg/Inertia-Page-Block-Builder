@@ -10,7 +10,7 @@ Built with Laravel 11, Inertia.js, Vue 3.
 ## Compatibility
 - PHP ^8.0
 - Vue 3
-- Inertia.js 1.0
+- Inertia.js 2.0
 - Laravel ^10
   
 ## Usage/Examples
